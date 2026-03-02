@@ -1,0 +1,98 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: 'Noto Sans Malayalam', system-ui, sans-serif;
+    background-color: #f0faf0;
+    color: #1a2e1a;
+    min-height: 100vh;
+  }
+
+  h1, h2, h3 {
+    font-family: Georgia, 'Noto Sans Malayalam', serif;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-forest-600 hover:bg-forest-700 active:bg-forest-800 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg active:scale-95 focus:outline-none focus:ring-4 focus:ring-forest-300;
+  }
+
+  .btn-secondary {
+    @apply bg-earth-500 hover:bg-earth-600 active:bg-earth-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg active:scale-95 focus:outline-none focus:ring-4 focus:ring-earth-300;
+  }
+
+  .btn-outline {
+    @apply border-2 border-forest-600 text-forest-700 hover:bg-forest-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-forest-300;
+  }
+
+  .card {
+    @apply bg-white rounded-2xl shadow-md p-5 border border-forest-100;
+  }
+
+  .input-field {
+    @apply w-full border-2 border-forest-200 rounded-xl px-4 py-3 text-base focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-200 transition-colors bg-white;
+  }
+
+  .page-container {
+    @apply max-w-5xl mx-auto px-4 py-6;
+  }
+
+  .section-title {
+    @apply text-2xl md:text-3xl font-bold text-forest-800 mb-2;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium;
+  }
+}
+
+/* Voice pulse animation */
+@keyframes pulse-ring {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(45, 168, 45, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 20px rgba(45, 168, 45, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(45, 168, 45, 0); }
+}
+
+.pulse-animate {
+  animation: pulse-ring 1.5s infinite;
+}
+
+@keyframes wave {
+  0%, 100% { transform: scaleY(0.4); }
+  50% { transform: scaleY(1); }
+}
+
+.wave-bar {
+  animation: wave 1s ease-in-out infinite;
+}
+
+.wave-bar:nth-child(2) { animation-delay: 0.1s; }
+.wave-bar:nth-child(3) { animation-delay: 0.2s; }
+.wave-bar:nth-child(4) { animation-delay: 0.3s; }
+.wave-bar:nth-child(5) { animation-delay: 0.4s; }
+
+/* Fade-in animation */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.5s ease-out forwards;
+}
+
+.fade-in-up-delay-1 { animation-delay: 0.1s; opacity: 0; }
+.fade-in-up-delay-2 { animation-delay: 0.2s; opacity: 0; }
+.fade-in-up-delay-3 { animation-delay: 0.3s; opacity: 0; }
+.fade-in-up-delay-4 { animation-delay: 0.4s; opacity: 0; }

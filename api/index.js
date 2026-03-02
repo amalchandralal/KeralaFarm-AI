@@ -31,11 +31,12 @@ mongoose.connect(process.env.MONGO_URI)
   .catch(err => console.log("Connection Error:", err));
 
 // -------------------- MIDDLEWARE --------------------
-app.use(cors({
-  credentials: true,
-  origin: ['http://localhost:8000'],
-}));
 
+
+app.use(cors({
+  origin: true,
+  credentials: true
+}))
 app.use(express.json());
 app.use(cookieParser());
 app.use('/uploads', express.static(__dirname + '/uploads'));
@@ -63,7 +64,29 @@ app.post('/register', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+app.get('/tts', async (req, res) => {
+  try {
+    const { text, lang = 'ml' } = req.query
+    if (!text) return res.status(400).json({ error: 'No text' })
 
+    const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${lang}&client=tw-ob`
+
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    })
+
+    const buffer = await response.arrayBuffer()
+    res.setHeader('Content-Type', 'audio/mpeg')
+    res.setHeader('Cache-Control', 'public, max-age=3600')
+    res.send(Buffer.from(buffer))
+
+  } catch (err) {
+    console.log('TTS Error:', err.message)
+    res.status(500).json({ error: 'TTS failed' })
+  }
+})
 // -------------------- LOGIN --------------------
 app.post('/login', async (req, res) => {
   try {
@@ -218,18 +241,51 @@ app.get('/bookings', async (req, res) => {
     res.json(await Booking.find({ user: userData.id }).populate('place'));
   });
 });
-// -------------------- LIST GEMINI MODELS (DEBUG) --------------------
-app.get('/list-models', async (req, res) => {
-  try {
-    const models = await genAI.listModels();
-    console.log(models);
-    res.json(models);
-  } catch (err) {
-    console.log("List Models Error:", err.message);
-    res.status(500).json({ error: err.message });
-  }
-});
 
+// -------------------- VOICE ASSISTANT --------------------
+
+app.post("/voice-assistant", async (req, res) => {
+
+  try {
+
+    const { question } = req.body;
+
+    if (!question) {
+      return res.status(400).json({ error: "No question provided" });
+    }
+
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.5-flash",
+      systemInstruction: `
+      You are an AI farming assistant for Kerala farmers.
+      Answer in simple Malayalam if possible.
+      Give short and clear farming advice.
+      `
+    });
+
+    const result = await model.generateContent(
+      `Farmer Question: ${question}`
+    );
+
+    const response = await result.response;
+    const answer = response.text();
+
+    res.json({
+      question,
+      answer
+    });
+
+  } catch (err) {
+
+    console.log("Voice Assistant Error:", err.message);
+
+    res.status(500).json({
+      error: "Failed to process voice query"
+    });
+
+  }
+
+});
 // -------------------- SERVER --------------------
 app.listen(5000, () => {
   console.log("Server is running on port 5000");
