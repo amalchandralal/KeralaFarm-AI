@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useVoice } from '../hooks/useVoice'
 import { askVoiceAssistant } from '../services/api'
+// Named imports — most common pattern
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 
 /* ─── tiny markdown-to-plain stripper so AI response looks clean ─── */
 const stripMarkdown = (txt: string) =>

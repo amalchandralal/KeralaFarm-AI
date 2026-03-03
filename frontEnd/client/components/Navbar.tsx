@@ -1,114 +1,113 @@
 import React, { useState } from 'react'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
+import { Link, useLocation } from 'react-router-dom'
+
+const navLinks = [
+  { label: 'Home',       to: '/'         },
+  { label: 'Dashboard',  to: '/dashboard' },
+  { label: 'Voice AI',   to: '/voice'     },
+  { label: 'Scan Crop',  to: '/scan'      },
+  { label: 'Tracker',    to: '/tracker'   },
+  { label: 'Offline',    to: '/offline'   },
+  { label: 'Places',     to: '/places'    },
+  { label: 'Bookings',   to: '/bookings'  },
+]
 
 const Navbar = () => {
-  const { user, logout } = useAuth()
-  const navigate = useNavigate()
-  const location = useLocation()
+  const { pathname } = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
 
-  const handleLogout = async () => {
-    await logout()
-    navigate('/')
-  }
-
-  const navLinks = [
-    { to: '/',          label: 'Home'      },
-    { to: '/dashboard', label: 'Dashboard' },
-    { to: '/voice',     label: 'Voice AI'  },
-    { to: '/scan',      label: 'Scan Crop' },
-    { to: '/tracker',   label: 'Tracker'   },
-    { to: '/offline',   label: 'Offline'   },
-    { to: '/places',    label: 'Places'    },
-    { to: '/bookings',  label: 'Bookings'  }, 
-  ]
-
-  // Fixed: use exact match to avoid /places matching /places-xyz etc.
-  const isActive = (to: string) =>
-    to === '/' ? location.pathname === '/' : location.pathname === to || location.pathname.startsWith(to + '/')
-
   return (
-    <nav className="sticky top-0 z-50 text-white shadow-lg bg-forest-700">
-      <div className="max-w-6xl px-4 mx-auto">
+    <nav className="sticky top-0 z-50 w-full shadow-md bg-forest-800">
+      <div className="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
+
           {/* Logo */}
-          <Link to="/" className="flex items-center flex-shrink-0 gap-2 text-lg font-bold">
+          <Link to="/" className="flex items-center gap-2 shrink-0">
             <span className="text-2xl">🌾</span>
-            <span className="hidden sm:block">KeralaFarm AI</span>
+            <span className="text-lg font-bold tracking-tight text-white">
+              KeralaFarm <span className="text-yellow-400">AI</span>
+            </span>
           </Link>
 
-          {/* Desktop Nav */}
-          <div className="hidden lg:flex items-center gap-0.5 overflow-x-auto">
-            {navLinks.map(link => (
-              <Link key={link.to} to={link.to}
-                className={`px-2.5 py-2 rounded-lg text-xs font-medium transition-colors hover:bg-forest-600 whitespace-nowrap ${
-                  isActive(link.to) ? 'bg-forest-600' : ''}`}>
-                {link.label}
-              </Link>
-            ))}
-          </div>
-
-          {/* Auth */}
-          <div className="items-center flex-shrink-0 hidden gap-2 lg:flex">
-            {user ? (
-              <>
-                <Link to="/profile"
-                  className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-forest-600">
-                  <span className="flex items-center justify-center text-sm font-bold rounded-full w-7 h-7 bg-forest-400">
-                    {String(user.name || user.email || '?')[0].toUpperCase()}
-                  </span>
-                  <span className="max-w-[80px] truncate">{user.name as string}</span>
+          {/* Desktop nav links */}
+          <div className="items-center hidden gap-1 md:flex">
+            {navLinks.map(link => {
+              const isActive = pathname === link.to
+              return (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  className={`
+                    px-3 py-1.5 rounded-md text-sm font-medium transition-colors
+                    ${isActive
+                      ? 'bg-yellow-400 text-forest-900 font-semibold'
+                      : 'text-gray-200 hover:bg-forest-700 hover:text-white'
+                    }
+                  `}
+                >
+                  {link.label}
                 </Link>
-                <button onClick={handleLogout}
-                  className="px-3 py-2 text-sm font-medium transition-colors rounded-lg bg-earth-500 hover:bg-earth-600">
-                  Logout
-                </button>
-              </>
-            ) : (
-              <>
-                <Link to="/login" className="px-3 py-2 text-sm rounded-lg hover:bg-forest-600">Login</Link>
-                <Link to="/register" className="px-3 py-2 text-sm font-medium rounded-lg bg-earth-500 hover:bg-earth-600">Register</Link>
-              </>
-            )}
+              )
+            })}
           </div>
 
-          {/* Mobile burger */}
-          <button className="p-2 rounded-lg lg:hidden hover:bg-forest-600"
-            onClick={() => setMenuOpen(!menuOpen)}>
-            <span className="text-xl">{menuOpen ? '✕' : '☰'}</span>
+          {/* Auth buttons */}
+          <div className="items-center hidden gap-3 md:flex">
+            <Link
+              to="/login"
+              className="text-sm font-medium text-gray-200 hover:text-white transition-colors px-3 py-1.5"
+            >
+              Login
+            </Link>
+            <Link
+              to="/register"
+              className="text-sm font-semibold bg-yellow-400 hover:bg-yellow-300 text-forest-900 px-4 py-1.5 rounded-md transition-colors"
+            >
+              Register
+            </Link>
+          </div>
+
+          {/* Mobile hamburger */}
+          <button
+            className="p-2 text-gray-200 rounded-md md:hidden hover:bg-forest-700"
+            onClick={() => setMenuOpen(prev => !prev)}
+            aria-label="Toggle menu"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              {menuOpen
+                ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              }
+            </svg>
           </button>
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile menu */}
       {menuOpen && (
-        <div className="px-4 pb-4 lg:hidden bg-forest-800">
-          {navLinks.map(link => (
-            <Link key={link.to} to={link.to} onClick={() => setMenuOpen(false)}
-              className={`flex items-center gap-3 px-3 py-3 rounded-lg my-0.5 text-base hover:bg-forest-700 ${
-                isActive(link.to) ? 'bg-forest-700' : ''}`}>
-              {link.label}
-            </Link>
-          ))}
-          <div className="pt-2 mt-2 border-t border-forest-700">
-            {user ? (
-              <>
-                <Link to="/profile" onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-forest-700">
-                  👤 {user.name as string || 'Profile'}
-                </Link>
-                <button onClick={() => { handleLogout(); setMenuOpen(false) }}
-                  className="flex items-center w-full gap-3 px-3 py-3 text-left rounded-lg hover:bg-forest-700 text-earth-300">
-                  🚪 Logout
-                </button>
-              </>
-            ) : (
-              <>
-                <Link to="/login" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-forest-700"> Login</Link>
-                <Link to="/register" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-forest-700"> Register</Link>
-              </>
-            )}
+        <div className="px-4 py-3 space-y-1 border-t md:hidden bg-forest-800 border-forest-700">
+          {navLinks.map(link => {
+            const isActive = pathname === link.to
+            return (
+              <Link
+                key={link.to}
+                to={link.to}
+                onClick={() => setMenuOpen(false)}
+                className={`
+                  block px-3 py-2 rounded-md text-sm font-medium transition-colors
+                  ${isActive
+                    ? 'bg-yellow-400 text-forest-900 font-semibold'
+                    : 'text-gray-200 hover:bg-forest-700 hover:text-white'
+                  }
+                `}
+              >
+                {link.label}
+              </Link>
+            )
+          })}
+          <div className="flex flex-col gap-2 pt-2 border-t border-forest-700">
+            <Link to="/login"    onClick={() => setMenuOpen(false)} className="block px-3 py-2 text-sm text-gray-200 hover:text-white">Login</Link>
+            <Link to="/register" onClick={() => setMenuOpen(false)} className="block px-3 py-2 text-sm font-semibold text-center bg-yellow-400 rounded-md text-forest-900">Register</Link>
           </div>
         </div>
       )}
