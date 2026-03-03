@@ -52,7 +52,7 @@ const BookingsPage = () => {
     <div className="page-container">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="section-title flex items-center gap-2">📅 My Bookings</h1>
+          <h1 className="flex items-center gap-2 section-title"> My Bookings</h1>
           <p className="text-gray-500" style={{ fontFamily: 'Noto Sans Malayalam, sans-serif' }}>
             എന്റെ ബുക്കിങ്ങുകൾ
           </p>
@@ -64,19 +64,19 @@ const BookingsPage = () => {
 
       {/* Booking Form */}
       {showForm && (
-        <div className="card mb-8 border-forest-300">
-          <h2 className="text-xl font-bold text-forest-800 mb-4">
-            📋 Create Booking {placeName && `— ${decodeURIComponent(placeName)}`}
+        <div className="mb-8 card border-forest-300">
+          <h2 className="mb-4 text-xl font-bold text-forest-800">
+             Create Booking {placeName && `— ${decodeURIComponent(placeName)}`}
           </h2>
           {formError && (
-            <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-3 mb-4 text-sm">
-              ⚠️ {formError}
+            <div className="p-3 mb-4 text-sm text-red-700 border border-red-200 bg-red-50 rounded-xl">
+               {formError}
             </div>
           )}
           <form onSubmit={handleSubmit} className="space-y-4">
             {!placeId && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Place Name</label>
+                <label className="block mb-1 text-sm font-medium text-gray-700">Place Name</label>
                 <input
                   type="text"
                   value={placeName}
@@ -87,7 +87,7 @@ const BookingsPage = () => {
               </div>
             )}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Date *</label>
+              <label className="block mb-1 text-sm font-medium text-gray-700">Date *</label>
               <input
                 type="date"
                 value={date}
@@ -97,22 +97,22 @@ const BookingsPage = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Notes (optional)</label>
+              <label className="block mb-1 text-sm font-medium text-gray-700">Notes (optional)</label>
               <textarea
                 value={notes}
                 onChange={e => setNotes(e.target.value)}
                 placeholder="Any special requirements..."
-                className="input-field h-24 resize-none"
+                className="h-24 resize-none input-field"
               />
             </div>
             <div className="flex gap-3">
-              <button type="button" onClick={() => setShowForm(false)} className="btn-outline flex-1">
+              <button type="button" onClick={() => setShowForm(false)} className="flex-1 btn-outline">
                 Cancel
               </button>
-              <button type="submit" disabled={submitting} className="btn-primary flex-1 flex items-center justify-center gap-2">
+              <button type="submit" disabled={submitting} className="flex items-center justify-center flex-1 gap-2 btn-primary">
                 {submitting ? (
-                  <><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />Booking...</>
-                ) : '✅ Confirm Booking'}
+                  <><div className="w-5 h-5 border-2 border-white rounded-full border-t-transparent animate-spin" />Booking...</>
+                ) : ' Confirm Booking'}
               </button>
             </div>
           </form>
@@ -121,7 +121,7 @@ const BookingsPage = () => {
 
       {/* Success */}
       {success && (
-        <div className="bg-forest-50 border border-forest-300 text-forest-700 rounded-xl p-4 mb-6 flex items-center gap-3">
+        <div className="flex items-center gap-3 p-4 mb-6 border bg-forest-50 border-forest-300 text-forest-700 rounded-xl">
           <span className="text-2xl">✅</span>
           <p>{success}</p>
         </div>
@@ -130,19 +130,19 @@ const BookingsPage = () => {
       {/* Bookings List */}
       {loading ? (
         <div className="flex justify-center py-16">
-          <div className="w-10 h-10 border-4 border-forest-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-10 h-10 border-4 rounded-full border-forest-500 border-t-transparent animate-spin" />
         </div>
       ) : error ? (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700">⚠️ {error}</div>
+        <div className="p-4 text-red-700 border border-red-200 bg-red-50 rounded-xl">⚠️ {error}</div>
       ) : bookings.length === 0 ? (
-        <div className="text-center py-16 text-gray-500">
-          <p className="text-5xl mb-3">📅</p>
-          <p className="text-lg mb-2">No bookings yet</p>
+        <div className="py-16 text-center text-gray-500">
+          <p className="mb-3 text-5xl">📅</p>
+          <p className="mb-2 text-lg">No bookings yet</p>
           <p style={{ fontFamily: 'Noto Sans Malayalam, sans-serif' }}>ഇതുവരെ ബുക്കിങ്ങ് ഇല്ല</p>
-          <Link to="/places" className="btn-primary inline-flex mt-4">Browse Places</Link>
+          <Link to="/places" className="inline-flex mt-4 btn-primary">Browse Places</Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {bookings.map((b, i) => (
             <BookingCard key={(b as Record<string, unknown>)._id as string || i} booking={b as Record<string, unknown>} />
           ))}

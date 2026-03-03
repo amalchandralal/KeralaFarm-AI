@@ -74,7 +74,7 @@ export default function VoiceAssistantWidget() {
     <div className="space-y-5">
 
       {/* ── Language toggle ── */}
-      <div className="flex gap-3 justify-center">
+      <div className="flex justify-center gap-3">
         {(['ml-IN', 'en-IN'] as const).map(l => (
           <button key={l} onClick={() => changeLang(l)}
             className={`px-6 py-2.5 rounded-xl font-semibold text-base transition-all ${
@@ -110,20 +110,20 @@ export default function VoiceAssistantWidget() {
           <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-full px-4 py-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
             <span className="font-mono font-bold text-red-600">{fmt(seconds)}</span>
-            <span className="text-red-500 text-sm">Recording — tap ⏹ to stop</span>
+            <span className="text-sm text-red-500">Recording — tap ⏹ to stop</span>
           </div>
         )}
 
         {/* Hint text */}
-        <p className="text-center text-gray-500 text-sm">
+        <p className="text-sm text-center text-gray-500">
           {isListening ? 'Speak freely — stops automatically after silence'
             : loading    ? 'Sending to AI…'
             : 'Tap 🎤 to speak your farming question'}
         </p>
-        <p className="text-center text-gray-400 text-xs" style={{ fontFamily: 'Noto Sans Malayalam, sans-serif' }}>
+        <p className="text-xs text-center text-gray-400" style={{ fontFamily: 'Noto Sans Malayalam, sans-serif' }}>
           {isListening ? 'സംസാരിക്കൂ — ⏹ ടാപ്പ് ചെയ്ത് നിർത്താം'
             : loading    ? 'AI-ലേക്ക് അയക്കുന്നു…'
-            : 'ചോദ്യം ചോദിക്കാൻ 🎤 ടാപ്പ് ചെയ്യൂ'}
+            : 'ചോദ്യം ചോദിക്കാൻ  ടാപ്പ് ചെയ്യൂ'}
         </p>
       </div>
 
@@ -135,20 +135,20 @@ export default function VoiceAssistantWidget() {
             : 'bg-gray-50 border-dashed border-gray-300'
         }`}>
           <p className="text-xs font-semibold mb-1 flex items-center gap-1.5 text-blue-500">
-            <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
+            <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
             {interimText ? 'Hearing you…' : 'Waiting for speech…'}
           </p>
           <p className="text-blue-900 font-medium text-base leading-relaxed min-h-[24px]">
-            {interimText || <span className="text-gray-400 italic text-sm">Start speaking…</span>}
+            {interimText || <span className="text-sm italic text-gray-400">Start speaking…</span>}
           </p>
         </div>
       )}
 
       {/* ── Captured question (after mic stops) ── */}
       {question && !isListening && (
-        <div className="bg-forest-50 border border-forest-200 rounded-xl p-4">
-          <p className="text-xs text-forest-600 font-bold uppercase tracking-wide mb-1">📝 Your Question</p>
-          <p className="text-forest-900 font-medium text-base">{question}</p>
+        <div className="p-4 border bg-forest-50 border-forest-200 rounded-xl">
+          <p className="mb-1 text-xs font-bold tracking-wide uppercase text-forest-600">📝 Your Question</p>
+          <p className="text-base font-medium text-forest-900">{question}</p>
         </div>
       )}
 
@@ -162,7 +162,7 @@ export default function VoiceAssistantWidget() {
             onChange={e => { setQuestion(e.target.value); setAnswer(''); setError('') }}
             onKeyDown={e => e.key === 'Enter' && !loading && question.trim() && sendQuestion(question)}
             placeholder="Type in Malayalam or English…"
-            className="input-field flex-1"
+            className="flex-1 input-field"
             disabled={isListening}
           />
           <button
@@ -171,7 +171,7 @@ export default function VoiceAssistantWidget() {
             className="btn-primary px-5 min-w-[52px] flex items-center justify-center disabled:opacity-50"
           >
             {loading
-              ? <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ? <span className="w-5 h-5 border-2 border-white rounded-full border-t-transparent animate-spin" />
               : '→'}
           </button>
         </div>
@@ -179,12 +179,12 @@ export default function VoiceAssistantWidget() {
 
       {/* ── Error ── */}
       {error && !loading && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
+        <div className="flex items-start gap-3 p-4 border border-red-200 bg-red-50 rounded-xl">
           <span className="text-xl mt-0.5">⚠️</span>
           <div>
-            <p className="text-red-700 font-medium text-sm">{error}</p>
+            <p className="text-sm font-medium text-red-700">{error}</p>
             {error.includes('blocked') && (
-              <p className="text-red-500 text-xs mt-1">
+              <p className="mt-1 text-xs text-red-500">
                 Click the 🔒 icon in Chrome's address bar → Site settings → Microphone → Allow
               </p>
             )}
@@ -195,21 +195,21 @@ export default function VoiceAssistantWidget() {
       {/* ── Loading spinner ── */}
       {loading && (
         <div className="flex items-center justify-center gap-3 py-6">
-          <div className="w-7 h-7 border-4 border-forest-500 border-t-transparent rounded-full animate-spin" />
+          <div className="border-4 rounded-full w-7 h-7 border-forest-500 border-t-transparent animate-spin" />
           <div>
-            <p className="text-forest-700 font-semibold">Getting answer from AI…</p>
-            <p className="text-forest-400 text-xs" style={{ fontFamily: 'Noto Sans Malayalam, sans-serif' }}>AI ഉത്തരം തിരയുന്നു…</p>
+            <p className="font-semibold text-forest-700">Getting answer from AI…</p>
+            <p className="text-xs text-forest-400" style={{ fontFamily: 'Noto Sans Malayalam, sans-serif' }}>AI ഉത്തരം തിരയുന്നു…</p>
           </div>
         </div>
       )}
 
       {/* ── AI Answer ── */}
       {answer && !loading && (
-        <div className="bg-gradient-to-br from-forest-50 to-earth-50 border-2 border-forest-200 rounded-2xl p-5 fade-in-up">
+        <div className="p-5 border-2 bg-gradient-to-br from-forest-50 to-earth-50 border-forest-200 rounded-2xl fade-in-up">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <span className="text-2xl">🤖</span>
-              <p className="font-bold text-forest-800 text-lg">AI Answer</p>
+              <span className="text-2xl"></span>
+              <p className="text-lg font-bold text-forest-800">AI Answer</p>
             </div>
             <button
               onClick={() => speak(answer, lang)}
@@ -219,7 +219,7 @@ export default function VoiceAssistantWidget() {
               🔊 Read aloud
             </button>
           </div>
-          <p className="text-gray-800 leading-relaxed text-base whitespace-pre-line">{answer}</p>
+          <p className="text-base leading-relaxed text-gray-800 whitespace-pre-line">{answer}</p>
         </div>
       )}
 

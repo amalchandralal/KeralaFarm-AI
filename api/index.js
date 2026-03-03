@@ -1,6 +1,5 @@
 
-
-
+const axios = require("axios");
 const express = require('express');
 const app = express();
 const cors = require('cors');
@@ -41,10 +40,6 @@ app.use(express.json());
 app.use(cookieParser());
 app.use('/uploads', express.static(__dirname + '/uploads'));
 
-// -------------------- TEST ROUTE --------------------
-app.get('/test', (req, res) => {
-  res.send('Hello World');
-});
 
 // -------------------- REGISTER --------------------
 app.post('/register', async (req, res) => {
@@ -286,6 +281,28 @@ app.post("/voice-assistant", async (req, res) => {
   }
 
 });
+//whether //
+app.get("/dashboard", async (req,res)=>{
+
+ try{
+
+  const weather = await axios.get(
+   `https://api.openweathermap.org/data/2.5/weather?lat=10.8505&lon=76.2711&appid=${process.env.WEATHER_KEY}&units=metric`
+  );
+
+  res.json({
+    weather: weather.data,
+    alerts: [],
+    recommendations: []
+  });
+
+ }catch(err){
+  console.log(err.response?.data);
+  res.status(500).json({error:"Weather API failed"});
+ }
+
+});
+console.log(process.env.WEATHER_KEY);
 // -------------------- SERVER --------------------
 app.listen(5000, () => {
   console.log("Server is running on port 5000");

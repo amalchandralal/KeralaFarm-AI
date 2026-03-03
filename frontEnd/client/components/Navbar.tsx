@@ -14,65 +14,66 @@ const Navbar = () => {
   }
 
   const navLinks = [
-    { to: '/', label: 'Home', icon: '🏠' },
-    { to: '/voice', label: 'Voice AI', icon: '🎤' },
-    { to: '/scan', label: 'Scan Crop', icon: '📷' },
-    { to: '/places', label: 'Places', icon: '📍' },
-    { to: '/bookings', label: 'Bookings', icon: '📅' },
+    { to: '/',          label: 'Home'},
+    { to: '/dashboard', label: 'Dashboard' },
+    { to: '/voice',     label: 'Voice AI' },
+    { to: '/scan',      label: 'Scan Crop' },
+    { to: '/tracker',   label: 'Tracker' },
+    { to: '/offline',   label: 'Offline' },
+    { to: '/places',    label: 'Places' },
   ]
 
+  const isActive = (to: string) =>
+    to === '/' ? location.pathname === '/' : location.pathname.startsWith(to)
+
   return (
-    <nav className="bg-forest-700 text-white shadow-lg sticky top-0 z-50">
-      <div className="max-w-5xl mx-auto px-4">
+    <nav className="sticky top-0 z-50 text-white shadow-lg bg-forest-700">
+      <div className="max-w-6xl px-4 mx-auto">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 font-bold text-lg">
+          <Link to="/" className="flex items-center flex-shrink-0 gap-2 text-lg font-bold">
             <span className="text-2xl">🌾</span>
             <span className="hidden sm:block">KeralaFarm AI</span>
           </Link>
 
           {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-1">
+          <div className="hidden lg:flex items-center gap-0.5 overflow-x-auto">
             {navLinks.map(link => (
-              <Link
-                key={link.to}
-                to={link.to}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-forest-600 ${
-                  location.pathname === link.to ? 'bg-forest-600' : ''
-                }`}
-              >
-                {link.icon} {link.label}
+              <Link key={link.to} to={link.to}
+                className={`px-2.5 py-2 rounded-lg text-xs font-medium transition-colors hover:bg-forest-600 whitespace-nowrap ${
+                  isActive(link.to) ? 'bg-forest-600' : ''}`}>
+                 {link.label}
               </Link>
             ))}
           </div>
 
           {/* Auth */}
-          <div className="hidden md:flex items-center gap-2">
+          <div className="items-center flex-shrink-0 hidden gap-2 lg:flex">
             {user ? (
               <>
-                <Link to="/profile" className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-forest-600 text-sm">
-                  <span className="w-7 h-7 rounded-full bg-forest-400 flex items-center justify-center font-bold">
-                    {user.name?.[0]?.toUpperCase()}
+                <Link to="/profile"
+                  className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-forest-600">
+                  <span className="flex items-center justify-center text-sm font-bold rounded-full w-7 h-7 bg-forest-400">
+                    {String(user.name || user.email || '?')[0].toUpperCase()}
                   </span>
-                  <span>{user.name}</span>
+                  <span className="max-w-[80px] truncate">{user.name as string}</span>
                 </Link>
-                <button onClick={handleLogout} className="px-3 py-2 rounded-lg bg-earth-500 hover:bg-earth-600 text-sm font-medium transition-colors">
+                <button onClick={handleLogout}
+                  className="px-3 py-2 text-sm font-medium transition-colors rounded-lg bg-earth-500 hover:bg-earth-600">
                   Logout
                 </button>
               </>
             ) : (
               <>
-                <Link to="/login" className="px-3 py-2 rounded-lg hover:bg-forest-600 text-sm">Login</Link>
-                <Link to="/register" className="px-3 py-2 rounded-lg bg-earth-500 hover:bg-earth-600 text-sm font-medium">Register</Link>
+                <Link to="/login" className="px-3 py-2 text-sm rounded-lg hover:bg-forest-600">Login</Link>
+                <Link to="/register" className="px-3 py-2 text-sm font-medium rounded-lg bg-earth-500 hover:bg-earth-600">Register</Link>
               </>
             )}
           </div>
 
-          {/* Mobile Menu Button */}
-          <button
-            className="md:hidden p-2 rounded-lg hover:bg-forest-600"
-            onClick={() => setMenuOpen(!menuOpen)}
-          >
+          {/* Mobile burger */}
+          <button className="p-2 rounded-lg lg:hidden hover:bg-forest-600"
+            onClick={() => setMenuOpen(!menuOpen)}>
             <span className="text-xl">{menuOpen ? '✕' : '☰'}</span>
           </button>
         </div>
@@ -80,26 +81,27 @@ const Navbar = () => {
 
       {/* Mobile Menu */}
       {menuOpen && (
-        <div className="md:hidden bg-forest-800 px-4 pb-4">
+        <div className="px-4 pb-4 lg:hidden bg-forest-800">
           {navLinks.map(link => (
-            <Link
-              key={link.to}
-              to={link.to}
-              onClick={() => setMenuOpen(false)}
-              className={`flex items-center gap-3 px-3 py-3 rounded-lg my-1 text-base hover:bg-forest-700 ${
-                location.pathname === link.to ? 'bg-forest-700' : ''
-              }`}
-            >
+            <Link key={link.to} to={link.to} onClick={() => setMenuOpen(false)}
+              className={`flex items-center gap-3 px-3 py-3 rounded-lg my-0.5 text-base hover:bg-forest-700 ${
+                isActive(link.to) ? 'bg-forest-700' : ''}`}>
               {link.icon} {link.label}
             </Link>
           ))}
-          <div className="border-t border-forest-700 mt-2 pt-2">
+          <div className="pt-2 mt-2 border-t border-forest-700">
             {user ? (
               <>
-                <Link to="/profile" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-forest-700">
-                  👤 {user.name}
+                <Link to="/profile" onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-forest-700">
+                  👤 {user.name as string || 'Profile'}
                 </Link>
-                <button onClick={() => { handleLogout(); setMenuOpen(false) }} className="w-full text-left flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-forest-700 text-earth-300">
+                <Link to="/bookings" onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-forest-700">
+                  📅 Bookings
+                </Link>
+                <button onClick={() => { handleLogout(); setMenuOpen(false) }}
+                  className="flex items-center w-full gap-3 px-3 py-3 text-left rounded-lg hover:bg-forest-700 text-earth-300">
                   🚪 Logout
                 </button>
               </>

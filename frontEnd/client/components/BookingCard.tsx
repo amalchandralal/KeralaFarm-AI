@@ -22,7 +22,7 @@ const BookingCard = ({ booking }: BookingCardProps) => {
   const statusClass = statusColors[booking.status?.toLowerCase() || ''] || 'bg-gray-100 text-gray-700'
 
   return (
-    <div className="card flex flex-col gap-2">
+    <div className="flex flex-col gap-2 card">
       <div className="flex items-start justify-between">
         <h3 className="font-bold text-forest-800">{booking.placeName || booking.place || 'Booking'}</h3>
         {booking.status && (
@@ -30,15 +30,15 @@ const BookingCard = ({ booking }: BookingCardProps) => {
         )}
       </div>
       {booking.date && (
-        <p className="text-sm text-gray-600 flex items-center gap-2">
-          📅 {new Date(booking.date).toLocaleDateString('en-IN', { dateStyle: 'long' })}
+        <p className="flex items-center gap-2 text-sm text-gray-600">
+           {new Date(booking.date).toLocaleDateString('en-IN', { dateStyle: 'long' })}
         </p>
       )}
       {booking.notes && (
         <p className="text-sm text-gray-500">{booking.notes}</p>
       )}
       {booking._id && (
-        <p className="text-xs text-gray-400 font-mono">ID: {booking._id}</p>
+        <p className="font-mono text-xs text-gray-400">ID: {booking._id}</p>
       )}
     </div>
   )

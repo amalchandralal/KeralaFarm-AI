@@ -60,16 +60,16 @@ const DiseaseScanner = () => {
         onDrop={handleDrop}
         onDragOver={e => e.preventDefault()}
         onClick={() => fileRef.current?.click()}
-        className="border-3 border-dashed border-forest-300 rounded-2xl p-8 text-center cursor-pointer hover:border-forest-500 hover:bg-forest-50 transition-all"
+        className="p-8 text-center transition-all border-dashed cursor-pointer border-3 border-forest-300 rounded-2xl hover:border-forest-500 hover:bg-forest-50"
       >
         {preview ? (
-          <img src={preview} alt="Crop preview" className="max-h-64 mx-auto rounded-xl object-contain" />
+          <img src={preview} alt="Crop preview" className="object-contain mx-auto max-h-64 rounded-xl" />
         ) : (
           <div>
-            <p className="text-5xl mb-3">🌿</p>
+            <p className="mb-3 text-5xl"></p>
             <p className="text-lg font-medium text-forest-700">Upload crop photo</p>
-            <p className="text-gray-500 text-sm mt-1">Click or drag & drop</p>
-            <p className="text-gray-400 text-xs mt-1" style={{ fontFamily: 'Noto Sans Malayalam, sans-serif' }}>
+            <p className="mt-1 text-sm text-gray-500">Click or drag & drop</p>
+            <p className="mt-1 text-xs text-gray-400" style={{ fontFamily: 'Noto Sans Malayalam, sans-serif' }}>
               വിളയുടെ ഫോട്ടോ അപ്‌ലോഡ് ചെയ്യൂ
             </p>
           </div>
@@ -80,17 +80,17 @@ const DiseaseScanner = () => {
       {/* Actions */}
       {image && (
         <div className="flex gap-3">
-          <button onClick={() => { setImage(null); setPreview(''); setResult(null) }} className="btn-outline flex-1">
+          <button onClick={() => { setImage(null); setPreview(''); setResult(null) }} className="flex-1 btn-outline">
             ✕ Clear
           </button>
-          <button onClick={handleScan} disabled={loading} className="btn-primary flex-1 flex items-center justify-center gap-2">
+          <button onClick={handleScan} disabled={loading} className="flex items-center justify-center flex-1 gap-2 btn-primary">
             {loading ? (
               <>
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-white rounded-full border-t-transparent animate-spin" />
                 Analyzing...
               </>
             ) : (
-              <>📊 Scan for Disease</>
+              <>Scan for Disease</>
             )}
           </button>
         </div>
@@ -98,16 +98,16 @@ const DiseaseScanner = () => {
 
       {/* Error */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700">
-          ⚠️ {error}
+        <div className="p-4 text-red-700 border border-red-200 bg-red-50 rounded-xl">
+           {error}
         </div>
       )}
 
       {/* Results */}
       {result && !loading && (
         <div className="space-y-4 fade-in-up">
-          <h3 className="text-xl font-bold text-forest-800 flex items-center gap-2">
-            📋 Analysis Results
+          <h3 className="flex items-center gap-2 text-xl font-bold text-forest-800">
+             Analysis Results
           </h3>
 
           {/* Confidence */}
@@ -119,7 +119,7 @@ const DiseaseScanner = () => {
                   {typeof confidence === 'number' ? `${confidence}%` : confidence}
                 </span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-3">
+              <div className="w-full h-3 bg-gray-200 rounded-full">
                 <div
                   className={`h-3 rounded-full transition-all ${confNum > 70 ? 'bg-forest-500' : confNum > 40 ? 'bg-yellow-500' : 'bg-red-500'}`}
                   style={{ width: `${Math.min(confNum, 100)}%` }}
@@ -130,32 +130,32 @@ const DiseaseScanner = () => {
 
           {/* Disease Name */}
           {result.disease_name && (
-            <div className="card border-l-4 border-red-400">
-              <p className="text-xs font-medium text-red-500 uppercase mb-1">🦠 Disease Detected</p>
+            <div className="border-l-4 border-red-400 card">
+              <p className="mb-1 text-xs font-medium text-red-500 uppercase">Disease Detected</p>
               <p className="text-xl font-bold text-gray-800">{result.disease_name}</p>
             </div>
           )}
 
           {/* Causes */}
           {result.possible_causes && (
-            <div className="card border-l-4 border-yellow-400">
-              <p className="text-xs font-medium text-yellow-600 uppercase mb-1">🔍 Possible Causes</p>
+            <div className="border-l-4 border-yellow-400 card">
+              <p className="mb-1 text-xs font-medium text-yellow-600 uppercase">Possible Causes</p>
               <p className="text-gray-700">{result.possible_causes}</p>
             </div>
           )}
 
           {/* Treatment */}
           {result.suggested_treatment && (
-            <div className="card border-l-4 border-forest-400">
-              <p className="text-xs font-medium text-forest-600 uppercase mb-1">💊 Suggested Treatment</p>
+            <div className="border-l-4 card border-forest-400">
+              <p className="mb-1 text-xs font-medium uppercase text-forest-600"> Suggested Treatment</p>
               <p className="text-gray-700">{result.suggested_treatment}</p>
             </div>
           )}
 
           {/* Fertilizer */}
           {result.fertilizer_guidance && (
-            <div className="card border-l-4 border-earth-400">
-              <p className="text-xs font-medium text-earth-600 uppercase mb-1">🌱 Fertilizer Guidance</p>
+            <div className="border-l-4 card border-earth-400">
+              <p className="mb-1 text-xs font-medium uppercase text-earth-600"> Fertilizer Guidance</p>
               <p className="text-gray-700">{result.fertilizer_guidance}</p>
             </div>
           )}

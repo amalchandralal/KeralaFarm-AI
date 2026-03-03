@@ -15,33 +15,33 @@ interface PlaceCardProps {
 
 const PlaceCard = ({ place }: PlaceCardProps) => {
   return (
-    <div className="card hover:shadow-lg transition-all duration-200 hover:-translate-y-1 overflow-hidden p-0">
+    <div className="p-0 overflow-hidden transition-all duration-200 card hover:shadow-lg hover:-translate-y-1">
       {place.image && (
         <img
           src={place.image}
           alt={place.name}
-          className="w-full h-40 object-cover"
+          className="object-cover w-full h-40"
           onError={e => (e.currentTarget.style.display = 'none')}
         />
       )}
       <div className="p-4">
         {place.category && (
-          <span className="badge bg-forest-100 text-forest-700 mb-2 text-xs">{place.category}</span>
+          <span className="mb-2 text-xs badge bg-forest-100 text-forest-700">{place.category}</span>
         )}
-        <h3 className="font-bold text-forest-800 text-lg mb-1">{place.name}</h3>
+        <h3 className="mb-1 text-lg font-bold text-forest-800">{place.name}</h3>
         {place.location && (
-          <p className="text-sm text-gray-500 flex items-center gap-1 mb-2">
-            📍 {place.location}
+          <p className="flex items-center gap-1 mb-2 text-sm text-gray-500">
+             {place.location}
           </p>
         )}
         {place.description && (
-          <p className="text-gray-600 text-sm line-clamp-2">{place.description}</p>
+          <p className="text-sm text-gray-600 line-clamp-2">{place.description}</p>
         )}
         <Link
           to={`/bookings/new?place=${place._id}&name=${encodeURIComponent(place.name || '')}`}
-          className="mt-3 btn-primary text-sm py-2 w-full text-center block"
+          className="block w-full py-2 mt-3 text-sm text-center btn-primary"
         >
-          📅 Book Now
+           Book Now
         </Link>
       </div>
     </div>

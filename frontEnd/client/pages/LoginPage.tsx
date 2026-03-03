@@ -31,24 +31,24 @@ const LoginPage = () => {
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="text-5xl mb-3">🌾</div>
+        <div className="mb-8 text-center">
+          <div className="mb-3 text-5xl"></div>
           <h1 className="text-3xl font-bold text-forest-800">Welcome Back</h1>
-          <p className="text-gray-500 mt-1" style={{ fontFamily: 'Noto Sans Malayalam, sans-serif' }}>
+          <p className="mt-1 text-gray-500" style={{ fontFamily: 'Noto Sans Malayalam, sans-serif' }}>
             തിരിച്ചുവരവിന് സ്വാഗതം
           </p>
         </div>
 
         <div className="card">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-3 mb-4 text-sm">
+            <div className="p-3 mb-4 text-sm text-red-700 border border-red-200 bg-red-50 rounded-xl">
               ⚠️ {error}
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+              <label className="block mb-1 text-sm font-medium text-gray-700">Email Address</label>
               <input
                 type="email"
                 value={email}
@@ -59,7 +59,7 @@ const LoginPage = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+              <label className="block mb-1 text-sm font-medium text-gray-700">Password</label>
               <input
                 type="password"
                 value={password}
@@ -69,19 +69,19 @@ const LoginPage = () => {
                 autoComplete="current-password"
               />
             </div>
-            <button type="submit" disabled={loading} className="btn-primary w-full text-lg flex items-center justify-center gap-2">
+            <button type="submit" disabled={loading} className="flex items-center justify-center w-full gap-2 text-lg btn-primary">
               {loading ? (
                 <>
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <div className="w-5 h-5 border-2 border-white rounded-full border-t-transparent animate-spin" />
                   Logging in...
                 </>
-              ) : '🔑 Login'}
+              ) : ' Login'}
             </button>
           </form>
 
-          <p className="text-center text-gray-500 text-sm mt-4">
+          <p className="mt-4 text-sm text-center text-gray-500">
             Don't have an account?{' '}
-            <Link to="/register" className="text-forest-600 font-medium hover:underline">Register here</Link>
+            <Link to="/register" className="font-medium text-forest-600 hover:underline">Register here</Link>
           </p>
         </div>
       </div>
