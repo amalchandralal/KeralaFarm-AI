@@ -1,20 +1,19 @@
-
 const axios = require("axios");
-const express = require('express');
+const express = require("express");
 const app = express();
-const cors = require('cors');
-const mongoose = require('mongoose');
-const dotenv = require('dotenv');
-const jwt = require('jsonwebtoken');
-const cookieParser = require('cookie-parser');
-const multer = require('multer');
-const fs = require('fs');
-const imageDownloader = require('image-downloader');
+const cors = require("cors");
+const mongoose = require("mongoose");
+const dotenv = require("dotenv");
+const jwt = require("jsonwebtoken");
+const cookieParser = require("cookie-parser");
+const multer = require("multer");
+const fs = require("fs");
+const imageDownloader = require("image-downloader");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-const User = require('./models/User');
-const Place = require('./models/Place');
-const Booking = require('./models/Booking');
+const User = require("./models/User");
+const Place = require("./models/Place");
+const Booking = require("./models/Booking");
 
 dotenv.config();
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -22,27 +21,28 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const jwtSecret = "Navi";
 
 // -------------------- MONGODB CONNECTION --------------------
-mongoose.connect(process.env.MONGO_URI)
+mongoose
+  .connect(process.env.MONGO_URI)
   .then(() => {
     console.log("MongoDB Connected");
     console.log("DB:", mongoose.connection.name);
   })
-  .catch(err => console.log("Connection Error:", err));
+  .catch((err) => console.log("Connection Error:", err));
 
 // -------------------- MIDDLEWARE --------------------
 
-
-app.use(cors({
-  origin: true,
-  credentials: true
-}))
+app.use(
+  cors({
+    origin: true,
+    credentials: true,
+  }),
+);
 app.use(express.json());
 app.use(cookieParser());
-app.use('/uploads', express.static(__dirname + '/uploads'));
-
+app.use("/uploads", express.static(__dirname + "/uploads"));
 
 // -------------------- REGISTER --------------------
-app.post('/register', async (req, res) => {
+app.post("/register", async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
@@ -54,36 +54,35 @@ app.post('/register', async (req, res) => {
     const user = await User.create({ name, email, password });
     console.log("User Saved");
     res.json(user);
-
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
-app.get('/tts', async (req, res) => {
+app.get("/tts", async (req, res) => {
   try {
-    const { text, lang = 'ml' } = req.query
-    if (!text) return res.status(400).json({ error: 'No text' })
+    const { text, lang = "ml" } = req.query;
+    if (!text) return res.status(400).json({ error: "No text" });
 
-    const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${lang}&client=tw-ob`
+    const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${lang}&client=tw-ob`;
 
     const response = await fetch(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-      }
-    })
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+      },
+    });
 
-    const buffer = await response.arrayBuffer()
-    res.setHeader('Content-Type', 'audio/mpeg')
-    res.setHeader('Cache-Control', 'public, max-age=3600')
-    res.send(Buffer.from(buffer))
-
+    const buffer = await response.arrayBuffer();
+    res.setHeader("Content-Type", "audio/mpeg");
+    res.setHeader("Cache-Control", "public, max-age=3600");
+    res.send(Buffer.from(buffer));
   } catch (err) {
-    console.log('TTS Error:', err.message)
-    res.status(500).json({ error: 'TTS failed' })
+    console.log("TTS Error:", err.message);
+    res.status(500).json({ error: "TTS failed" });
   }
-})
+});
 // -------------------- LOGIN --------------------
-app.post('/login', async (req, res) => {
+app.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -100,17 +99,16 @@ app.post('/login', async (req, res) => {
       {},
       (err, token) => {
         if (err) throw err;
-        res.cookie('token', token).json(user);
-      }
+        res.cookie("token", token).json(user);
+      },
     );
-
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
 // -------------------- PROFILE --------------------
-app.get('/profile', async (req, res) => {
+app.get("/profile", async (req, res) => {
   const { token } = req.cookies;
   if (!token) return res.json("Not logged in");
 
@@ -122,22 +120,22 @@ app.get('/profile', async (req, res) => {
 });
 
 // -------------------- LOGOUT --------------------
-app.post('/logout', (req, res) => {
-  res.cookie('token', '').json(true);
+app.post("/logout", (req, res) => {
+  res.cookie("token", "").json(true);
 });
 
 // -------------------- UPLOAD --------------------
-const photosMiddleware = multer({ dest: 'uploads/' });
+const photosMiddleware = multer({ dest: "uploads/" });
 
-app.post('/upload', photosMiddleware.array('photos', 100), (req, res) => {
+app.post("/upload", photosMiddleware.array("photos", 100), (req, res) => {
   const uploadedFiles = [];
 
   for (let i = 0; i < req.files.length; i++) {
     const { path, originalname } = req.files[i];
-    const ext = originalname.split('.').pop();
-    const newPath = path + '.' + ext;
+    const ext = originalname.split(".").pop();
+    const newPath = path + "." + ext;
     fs.renameSync(path, newPath);
-    uploadedFiles.push(newPath.replace('uploads/', ""));
+    uploadedFiles.push(newPath.replace("uploads/", ""));
   }
 
   res.json(uploadedFiles);
@@ -152,63 +150,69 @@ const diseaseSchema = {
     possible_causes: { type: "string" },
     suggested_treatment: { type: "string" },
     fertilizer_guidance: { type: "string" },
-    confidence_level: { type: "string" }
+    confidence_level: { type: "string" },
   },
-  required: ["disease_name", "possible_causes", "suggested_treatment"]
+  required: ["disease_name", "possible_causes", "suggested_treatment"],
 };
 
-app.post('/detect-disease', photosMiddleware.single('image'), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ error: "No image uploaded" });
-    }
-
-    // 1. Read image from /uploads folder
-    const imageBuffer = fs.readFileSync(req.file.path);
-    const base64Image = imageBuffer.toString("base64");
-
-    // 2. Initialize Model with System Instructions & JSON Config
-    const model = genAI.getGenerativeModel({ 
-      model: "gemini-2.5-flash",
-      systemInstruction: "You are an expert plant pathologist. Analyze crop images. If a disease is found, provide details. If the plant is healthy, indicate that. Always return response in JSON.",
-      generationConfig: {
-        responseMimeType: "application/json",
-        responseSchema: diseaseSchema,
+app.post(
+  "/detect-disease",
+  photosMiddleware.single("image"),
+  async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No image uploaded" });
       }
-    });
 
-    // 3. Send request
-    const result = await model.generateContent([
-      {
-        inlineData: {
-          mimeType: req.file.mimetype,
-          data: base64Image,
+      // 1. Read image from /uploads folder
+      const imageBuffer = fs.readFileSync(req.file.path);
+      const base64Image = imageBuffer.toString("base64");
+
+      // 2. Initialize Model with System Instructions & JSON Config
+      const model = genAI.getGenerativeModel({
+        model: "gemini-2.5-flash",
+        systemInstruction:
+          "You are an expert plant pathologist. Analyze crop images. If a disease is found, provide details. If the plant is healthy, indicate that. Always return response in JSON.",
+        generationConfig: {
+          responseMimeType: "application/json",
+          responseSchema: diseaseSchema,
         },
-      },
-      "Identify the plant disease in this image and provide treatment and fertilizer guidance."
-    ]);
+      });
 
-    const response = await result.response;
-    const jsonResponse = JSON.parse(response.text());
+      // 3. Send request
+      const result = await model.generateContent([
+        {
+          inlineData: {
+            mimeType: req.file.mimetype,
+            data: base64Image,
+          },
+        },
+        "Identify the plant disease in this image and provide treatment and fertilizer guidance.",
+      ]);
 
-    // 4. Cleanup: Delete the temporary file from /uploads after processing
-    fs.unlinkSync(req.file.path);
+      const response = await result.response;
+      const jsonResponse = JSON.parse(response.text());
 
-    // 5. Return JSON to frontend
-    res.json(jsonResponse);
+      // 4. Cleanup: Delete the temporary file from /uploads after processing
+      fs.unlinkSync(req.file.path);
 
-  } catch (err) {
-    console.error("Gemini Error:", err.message);
-    res.status(500).json({ error: "Failed to analyze image. Please try again." });
-  }
-});
+      // 5. Return JSON to frontend
+      res.json(jsonResponse);
+    } catch (err) {
+      console.error("Gemini Error:", err.message);
+      res
+        .status(500)
+        .json({ error: "Failed to analyze image. Please try again." });
+    }
+  },
+);
 // -------------------- GET ALL PLACES --------------------
-app.get('/places', async (req, res) => {
+app.get("/places", async (req, res) => {
   res.json(await Place.find());
 });
 
 // -------------------- BOOKINGS --------------------
-app.post('/bookings', async (req, res) => {
+app.post("/bookings", async (req, res) => {
   try {
     const { token } = req.cookies;
 
@@ -217,32 +221,29 @@ app.post('/bookings', async (req, res) => {
 
       const booking = await Booking.create({
         ...req.body,
-        user: userData.id
+        user: userData.id,
       });
 
       res.json(booking);
     });
-
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-app.get('/bookings', async (req, res) => {
+app.get("/bookings", async (req, res) => {
   const { token } = req.cookies;
 
   jwt.verify(token, jwtSecret, {}, async (err, userData) => {
     if (err) throw err;
-    res.json(await Booking.find({ user: userData.id }).populate('place'));
+    res.json(await Booking.find({ user: userData.id }).populate("place"));
   });
 });
 
 // -------------------- VOICE ASSISTANT --------------------
 
 app.post("/voice-assistant", async (req, res) => {
-
   try {
-
     const { question } = req.body;
 
     if (!question) {
@@ -255,95 +256,157 @@ app.post("/voice-assistant", async (req, res) => {
       You are an AI farming assistant for Kerala farmers.
       Answer in simple Malayalam if possible.
       Give short and clear farming advice.
-      `
+      `,
     });
 
-    const result = await model.generateContent(
-      `Farmer Question: ${question}`
-    );
+    const result = await model.generateContent(`Farmer Question: ${question}`);
 
     const response = await result.response;
     const answer = response.text();
 
     res.json({
       question,
-      answer
+      answer,
     });
-
   } catch (err) {
-
     console.log("Voice Assistant Error:", err.message);
 
     res.status(500).json({
-      error: "Failed to process voice query"
+      error: "Failed to process voice query",
     });
-
   }
+});
+//translation//
+app.post("/translate", async (req, res) => {
+  try {
+    const { text, field } = req.body;
 
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+    const result = await model.generateContent(
+      `Translate this to Malayalam. Return only the translated text, nothing else:\n\n${text}`,
+    );
+
+    res.json({ translated: result.response.text().trim() });
+  } catch (err) {
+    res.status(500).json({ error: "Translation failed" });
+  }
 });
 //whether //
 app.get("/dashboard", async (req, res) => {
   try {
     const weatherRes = await axios.get(
-      `https://api.openweathermap.org/data/2.5/weather?lat=10.8505&lon=76.2711&appid=${process.env.WEATHER_KEY}&units=metric`
+      `https://api.openweathermap.org/data/2.5/weather?lat=10.8505&lon=76.2711&appid=${process.env.WEATHER_KEY}&units=metric`,
     );
 
     const w = weatherRes.data;
-    const temp      = w.main.temp;
-    const humidity  = w.main.humidity;
+    const temp = w.main.temp;
+    const humidity = w.main.humidity;
     const windSpeed = w.wind.speed * 3.6;
-    const rainfall  = w.rain?.["1h"] ?? w.rain?.["3h"] ?? 0;
+    const rainfall = w.rain?.["1h"] ?? w.rain?.["3h"] ?? 0;
     const condition = w.weather[0].main;
-    const clouds    = w.clouds.all;
+    const clouds = w.clouds.all;
 
     const alerts = [];
     const recommendations = [];
 
     // Alerts
     if (humidity > 80)
-      alerts.push({ title: "Stem Borer Alert", desc: "High humidity increases stem borer risk in paddy. Apply Chlorpyrifos 2.5ml/L if observed.", severity: "high" });
+      alerts.push({
+        title: "Stem Borer Alert",
+        desc: "High humidity increases stem borer risk in paddy. Apply Chlorpyrifos 2.5ml/L if observed.",
+        severity: "high",
+      });
 
     if (humidity > 75 && clouds > 60)
-      alerts.push({ title: "Blast Disease Risk", desc: "Cloudy and humid — ideal for rice blast. Use Tricyclazole spray preventively.", severity: "medium" });
+      alerts.push({
+        title: "Blast Disease Risk",
+        desc: "Cloudy and humid — ideal for rice blast. Use Tricyclazole spray preventively.",
+        severity: "medium",
+      });
 
     if (condition === "Rain" || condition === "Thunderstorm" || rainfall > 10)
-      alerts.push({ title: "Waterlogging Warning", desc: "Heavy rainfall detected. Ensure drainage channels are clear to prevent root rot.", severity: "high" });
+      alerts.push({
+        title: "Waterlogging Warning",
+        desc: "Heavy rainfall detected. Ensure drainage channels are clear to prevent root rot.",
+        severity: "high",
+      });
 
     if (temp > 35)
-      alerts.push({ title: "Heat Stress Alert", desc: `Temperature at ${Math.round(temp)}°C. Avoid field work 11am–3pm. Increase irrigation frequency.`, severity: "high" });
+      alerts.push({
+        title: "Heat Stress Alert",
+        desc: `Temperature at ${Math.round(temp)}°C. Avoid field work 11am–3pm. Increase irrigation frequency.`,
+        severity: "high",
+      });
 
     if (windSpeed > 25)
-      alerts.push({ title: "High Wind Warning", desc: `Wind at ${Math.round(windSpeed)} km/h. Avoid spraying — drift risk.`, severity: "medium" });
+      alerts.push({
+        title: "High Wind Warning",
+        desc: `Wind at ${Math.round(windSpeed)} km/h. Avoid spraying — drift risk.`,
+        severity: "medium",
+      });
 
     if (temp > 32 && humidity < 50 && condition === "Clear")
-      alerts.push({ title: "Rhinoceros Beetle Risk", desc: "Dry and hot — check coconut crown for beetle damage.", severity: "medium" });
+      alerts.push({
+        title: "Rhinoceros Beetle Risk",
+        desc: "Dry and hot — check coconut crown for beetle damage.",
+        severity: "medium",
+      });
 
-    if (humidity > 80 && temp > 25 && (condition === "Rain" || condition === "Drizzle"))
-      alerts.push({ title: "Fungal Risk High", desc: "Wet and warm — apply copper fungicide to tomato and brinjal.", severity: "high" });
+    if (
+      humidity > 80 &&
+      temp > 25 &&
+      (condition === "Rain" || condition === "Drizzle")
+    )
+      alerts.push({
+        title: "Fungal Risk High",
+        desc: "Wet and warm — apply copper fungicide to tomato and brinjal.",
+        severity: "high",
+      });
 
     // Recommendations
     if (condition === "Clouds" || clouds > 50)
-      recommendations.push({ text: "Good time to apply basal fertilizer to paddy before rain.", tag: "Fertilizer" });
+      recommendations.push({
+        text: "Good time to apply basal fertilizer to paddy before rain.",
+        tag: "Fertilizer",
+      });
 
     if (condition === "Rain" || condition === "Drizzle" || rainfall > 5)
-      recommendations.push({ text: `Skip irrigation today — natural rainfall of ${rainfall > 0 ? rainfall + "mm" : "rain"} expected.`, tag: "Water" });
+      recommendations.push({
+        text: `Skip irrigation today — natural rainfall of ${rainfall > 0 ? rainfall + "mm" : "rain"} expected.`,
+        tag: "Water",
+      });
     else if (temp > 35 && humidity < 40)
-      recommendations.push({ text: "Hot and dry — increase irrigation frequency to prevent crop wilting.", tag: "Water" });
+      recommendations.push({
+        text: "Hot and dry — increase irrigation frequency to prevent crop wilting.",
+        tag: "Water",
+      });
 
     if (rainfall > 15 || condition === "Thunderstorm")
-      recommendations.push({ text: "Heavy rainfall detected. Harvest ripe vegetables now to avoid damage.", tag: "Harvest" });
+      recommendations.push({
+        text: "Heavy rainfall detected. Harvest ripe vegetables now to avoid damage.",
+        tag: "Harvest",
+      });
 
     if (humidity > 70 && (condition === "Clouds" || condition === "Drizzle"))
-      recommendations.push({ text: "Apply fungicide spray before forecast rainfall.", tag: "Pest Control" });
+      recommendations.push({
+        text: "Apply fungicide spray before forecast rainfall.",
+        tag: "Pest Control",
+      });
 
     if (condition === "Clear" && windSpeed < 15)
-      recommendations.push({ text: "Clear skies and calm wind — ideal conditions for pesticide or fertilizer spraying.", tag: "Pest Control" });
+      recommendations.push({
+        text: "Clear skies and calm wind — ideal conditions for pesticide or fertilizer spraying.",
+        tag: "Pest Control",
+      });
 
     if (temp > 34)
-      recommendations.push({ text: `High temperature (${Math.round(temp)}°C) — apply mulch around crops to retain soil moisture.`, tag: "Advisory" });
+      recommendations.push({
+        text: `High temperature (${Math.round(temp)}°C) — apply mulch around crops to retain soil moisture.`,
+        tag: "Advisory",
+      });
 
     res.json({ weather: w, alerts, recommendations });
-
   } catch (err) {
     console.log(err.response?.data);
     res.status(500).json({ error: "Weather API failed" });
