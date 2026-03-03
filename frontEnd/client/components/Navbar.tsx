@@ -14,17 +14,19 @@ const Navbar = () => {
   }
 
   const navLinks = [
-    { to: '/',          label: 'Home'},
+    { to: '/',          label: 'Home'      },
     { to: '/dashboard', label: 'Dashboard' },
-    { to: '/voice',     label: 'Voice AI' },
+    { to: '/voice',     label: 'Voice AI'  },
     { to: '/scan',      label: 'Scan Crop' },
-    { to: '/tracker',   label: 'Tracker' },
-    { to: '/offline',   label: 'Offline' },
-    { to: '/places',    label: 'Places' },
+    { to: '/tracker',   label: 'Tracker'   },
+    { to: '/offline',   label: 'Offline'   },
+    { to: '/places',    label: 'Places'    },
+    { to: '/bookings',  label: 'Bookings'  }, // ✅ Added to desktop nav
   ]
 
+  // Fixed: use exact match to avoid /places matching /places-xyz etc.
   const isActive = (to: string) =>
-    to === '/' ? location.pathname === '/' : location.pathname.startsWith(to)
+    to === '/' ? location.pathname === '/' : location.pathname === to || location.pathname.startsWith(to + '/')
 
   return (
     <nav className="sticky top-0 z-50 text-white shadow-lg bg-forest-700">
@@ -42,7 +44,7 @@ const Navbar = () => {
               <Link key={link.to} to={link.to}
                 className={`px-2.5 py-2 rounded-lg text-xs font-medium transition-colors hover:bg-forest-600 whitespace-nowrap ${
                   isActive(link.to) ? 'bg-forest-600' : ''}`}>
-                 {link.label}
+                {link.label}
               </Link>
             ))}
           </div>
@@ -86,7 +88,7 @@ const Navbar = () => {
             <Link key={link.to} to={link.to} onClick={() => setMenuOpen(false)}
               className={`flex items-center gap-3 px-3 py-3 rounded-lg my-0.5 text-base hover:bg-forest-700 ${
                 isActive(link.to) ? 'bg-forest-700' : ''}`}>
-              {link.icon} {link.label}
+              {link.label}
             </Link>
           ))}
           <div className="pt-2 mt-2 border-t border-forest-700">
@@ -95,10 +97,6 @@ const Navbar = () => {
                 <Link to="/profile" onClick={() => setMenuOpen(false)}
                   className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-forest-700">
                   👤 {user.name as string || 'Profile'}
-                </Link>
-                <Link to="/bookings" onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-forest-700">
-                  📅 Bookings
                 </Link>
                 <button onClick={() => { handleLogout(); setMenuOpen(false) }}
                   className="flex items-center w-full gap-3 px-3 py-3 text-left rounded-lg hover:bg-forest-700 text-earth-300">
