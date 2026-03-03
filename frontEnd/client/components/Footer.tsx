@@ -21,19 +21,19 @@ const Footer = () => {
           <div>
             <h4 className="mb-3 font-bold text-white">Features</h4>
             <ul className="space-y-2 text-sm">
-              <li><Link to="/voice" className="transition-colors hover:text-white">🎤 Voice Assistant</Link></li>
-              <li><Link to="/scan" className="transition-colors hover:text-white">📷 Disease Scanner</Link></li>
-              <li><Link to="/places" className="transition-colors hover:text-white">📍 Places</Link></li>
-              <li><Link to="/bookings" className="transition-colors hover:text-white">📅 Bookings</Link></li>
+              <li><Link to="/voice" className="transition-colors hover:text-white"> Voice Assistant</Link></li>
+              <li><Link to="/scan" className="transition-colors hover:text-white"> Disease Scanner</Link></li>
+              <li><Link to="/places" className="transition-colors hover:text-white"> Places</Link></li>
+              <li><Link to="/bookings" className="transition-colors hover:text-white"> Bookings</Link></li>
             </ul>
           </div>
 
           <div>
             <h4 className="mb-3 font-bold text-white">Account</h4>
             <ul className="space-y-2 text-sm">
-              <li><Link to="/login" className="transition-colors hover:text-white">🔑 Login</Link></li>
-              <li><Link to="/register" className="transition-colors hover:text-white">📝 Register</Link></li>
-              <li><Link to="/profile" className="transition-colors hover:text-white">👤 Profile</Link></li>
+              <li><Link to="/login" className="transition-colors hover:text-white"> Login</Link></li>
+              <li><Link to="/register" className="transition-colors hover:text-white"> Register</Link></li>
+              <li><Link to="/profile" className="transition-colors hover:text-white"> Profile</Link></li>
             </ul>
           </div>
         </div>

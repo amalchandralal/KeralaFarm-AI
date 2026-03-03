@@ -207,7 +207,7 @@ export default function VoiceAssistantWidget() {
       {/* ── Error ── */}
       {error && !loading && (
         <div className="flex items-start gap-3 p-4 border border-red-200 bg-red-50 rounded-xl">
-          <span className="text-xl mt-0.5">⚠️</span>
+          <span className="text-xl mt-0.5"></span>
           <div>
             <p className="text-sm font-medium text-red-700">{error}</p>
             {error.includes('blocked') && (
@@ -235,7 +235,7 @@ export default function VoiceAssistantWidget() {
         <div className="p-5 border-2 bg-gradient-to-br from-forest-50 to-earth-50 border-forest-200 rounded-2xl fade-in-up">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <span className="text-2xl">🌿</span>
+              <span className="text-2xl"></span>
               <p className="text-lg font-bold text-forest-800">AI Answer</p>
             </div>
 
@@ -247,7 +247,7 @@ export default function VoiceAssistantWidget() {
                   className="flex items-center gap-1.5 text-sm font-medium text-forest-600
                     hover:text-white hover:bg-forest-600 bg-forest-100 px-3 py-1.5 rounded-lg transition-all"
                 >
-                  🔊 Read aloud
+                   Read aloud
                 </button>
               )}
 
@@ -257,7 +257,7 @@ export default function VoiceAssistantWidget() {
                   className="flex items-center gap-1.5 text-sm font-medium text-yellow-700
                     hover:text-white hover:bg-yellow-500 bg-yellow-100 px-3 py-1.5 rounded-lg transition-all"
                 >
-                  ⏸ Pause
+                   Pause
                 </button>
               )}
 
@@ -267,7 +267,7 @@ export default function VoiceAssistantWidget() {
                   className="flex items-center gap-1.5 text-sm font-medium text-forest-600
                     hover:text-white hover:bg-forest-600 bg-forest-100 px-3 py-1.5 rounded-lg transition-all"
                 >
-                  ▶ Resume
+                   Resume
                 </button>
               )}
 
@@ -277,7 +277,7 @@ export default function VoiceAssistantWidget() {
                   className="flex items-center gap-1.5 text-sm font-medium text-red-600
                     hover:text-white hover:bg-red-500 bg-red-100 px-3 py-1.5 rounded-lg transition-all"
                 >
-                  ⏹ Stop
+                   Stop
                 </button>
               )}
             </div>

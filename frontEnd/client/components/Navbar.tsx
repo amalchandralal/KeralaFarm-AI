@@ -21,7 +21,7 @@ const Navbar = () => {
     { to: '/tracker',   label: 'Tracker'   },
     { to: '/offline',   label: 'Offline'   },
     { to: '/places',    label: 'Places'    },
-    { to: '/bookings',  label: 'Bookings'  }, // ✅ Added to desktop nav
+    { to: '/bookings',  label: 'Bookings'  }, 
   ]
 
   // Fixed: use exact match to avoid /places matching /places-xyz etc.
@@ -105,8 +105,8 @@ const Navbar = () => {
               </>
             ) : (
               <>
-                <Link to="/login" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-forest-700">🔑 Login</Link>
-                <Link to="/register" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-forest-700">📝 Register</Link>
+                <Link to="/login" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-forest-700"> Login</Link>
+                <Link to="/register" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-forest-700"> Register</Link>
               </>
             )}
           </div>

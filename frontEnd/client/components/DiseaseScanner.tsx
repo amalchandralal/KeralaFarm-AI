@@ -28,48 +28,6 @@ const translateToMalayalam = async (result: DiseaseResult): Promise<DiseaseResul
   return { ...result, ...translated }
 }
 
-// const translateToMalayalam = async (
-//   result: DiseaseResult,
-// ): Promise<DiseaseResult> => {
-//   const prompt = `Translate the following plant disease analysis fields to Malayalam. Return ONLY a JSON object with the same keys. Do not add any explanation or markdown.
-
-// Input JSON:
-// ${JSON.stringify(
-//   {
-//     disease_name: result.disease_name,
-//     possible_causes: result.possible_causes,
-//     suggested_treatment: result.suggested_treatment,
-//     fertilizer_guidance: result.fertilizer_guidance,
-//   },
-//   null,
-//   2,
-// )}
-
-// Return format:
-// {"disease_name":"...","possible_causes":"...","suggested_treatment":"...","fertilizer_guidance":"..."}`;
-
-//   const response = await fetch("https://api.anthropic.com/v1/messages", {
-//     method: "POST",
-//     headers: {
-//       "Content-Type": "application/json",
-//       "anthropic-dangerous-direct-browser-access": "true",
-//     },
-//     body: JSON.stringify({
-//       model: "claude-sonnet-4-20250514",
-//       max_tokens: 1000,
-//       messages: [{ role: "user", content: prompt }],
-//     }),
-//   });
-
-//   const data = await response.json();
-//   const text =
-//     data.content
-//       ?.map((b: { type: string; text?: string }) => b.text || "")
-//       .join("") || "";
-//   const clean = text.replace(/```json|```/g, "").trim();
-//   const translated = JSON.parse(clean);
-//   return { ...result, ...translated };
-// };
 
 const DiseaseScanner = () => {
   const [image, setImage] = useState<File | null>(null);
@@ -157,7 +115,7 @@ const DiseaseScanner = () => {
           />
         ) : (
           <div>
-            <p className="mb-3 text-5xl">🌿</p>
+            <p className="mb-3 text-5xl"></p>
             <p className="text-lg font-medium text-forest-700">
               Upload crop photo
             </p>
@@ -205,7 +163,7 @@ const DiseaseScanner = () => {
                 Analyzing...
               </>
             ) : (
-              <>🔍 Scan for Disease</>
+              <> Scan for Disease</>
             )}
           </button>
         </div>
@@ -214,7 +172,7 @@ const DiseaseScanner = () => {
       {/* Error */}
       {error && (
         <div className="p-4 text-red-700 border border-red-200 bg-red-50 rounded-xl">
-          ⚠️ {error}
+           {error}
         </div>
       )}
 
@@ -224,7 +182,7 @@ const DiseaseScanner = () => {
           {/* Header + Language Toggle */}
           <div className="flex items-center justify-between">
             <h3 className="flex items-center gap-2 text-xl font-bold text-forest-800">
-              🔬 Analysis Results
+               Analysis Results
             </h3>
             <div className="flex gap-2">
               {(["en", "ml"] as const).map((l) => (
@@ -314,8 +272,8 @@ const DiseaseScanner = () => {
             <div className="border-l-4 card border-forest-400">
               <p className="mb-1 text-xs font-medium uppercase text-forest-600">
                 {lang === "ml"
-                  ? "💊 നിർദ്ദേശിച്ച ചികിത്സ"
-                  : "💊 Suggested Treatment"}
+                  ? " നിർദ്ദേശിച്ച ചികിത്സ"
+                  : " Suggested Treatment"}
               </p>
               <p
                 className="text-gray-700"
@@ -334,7 +292,7 @@ const DiseaseScanner = () => {
           {displayed?.fertilizer_guidance && (
             <div className="border-l-4 card border-earth-400">
               <p className="mb-1 text-xs font-medium uppercase text-earth-600">
-                {lang === "ml" ? "🌱 വളം നിർദ്ദേശം" : "🌱 Fertilizer Guidance"}
+                {lang === "ml" ? " വളം നിർദ്ദേശം" : " Fertilizer Guidance"}
               </p>
               <p
                 className="text-gray-700"

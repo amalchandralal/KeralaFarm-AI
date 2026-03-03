@@ -57,7 +57,7 @@ const RegisterPage = () => {
         <div className="card">
           {error && (
             <div className="p-3 mb-4 text-sm text-red-700 border border-red-200 bg-red-50 rounded-xl">
-              ⚠️ {error}
+               {error}
             </div>
           )}
 
@@ -112,7 +112,7 @@ const RegisterPage = () => {
                   Creating account...
                 </>
               ) : (
-                "📝 Create Account"
+                " Create Account"
               )}
             </button>
           </form>

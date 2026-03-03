@@ -36,10 +36,10 @@ interface Place {
 }
 
 const typeLabel: Record<string, string> = {
-  government:   '🏛️ Govt Office',
-  agricultural: '🌾 Agri Office',
-  agrarian:     '🛒 Agri Shop',
-  agri:         '🌱 Agri Center',
+  government:   ' Govt Office',
+  agricultural: ' Agri Office',
+  agrarian:     ' Agri Shop',
+  agri:         ' Agri Center',
 }
 
 const KERALA_BOUNDS = { minLat: 8.17, maxLat: 12.79, minLon: 74.85, maxLon: 77.42 }
@@ -218,7 +218,7 @@ export default function PlacesPage() {
 
       {outsideKerala && (
         <div className="p-3 mb-4 text-sm text-blue-800 border border-blue-200 bg-blue-50 rounded-xl">
-          🗺️ You're outside Kerala — showing nearest agricultural offices in your area.
+           You're outside Kerala — showing nearest agricultural offices in your area.
         </div>
       )}
 
@@ -231,7 +231,7 @@ export default function PlacesPage() {
           className="flex items-center justify-center gap-2 px-5 btn-primary whitespace-nowrap">
           {locating
             ? <><div className="w-4 h-4 border-2 border-white rounded-full border-t-transparent animate-spin" /> Locating…</>
-            : '📍 Near Me'}
+            : ' Near Me'}
         </button>
       </div>
 
@@ -246,7 +246,7 @@ export default function PlacesPage() {
           className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white transition-all rounded-xl bg-forest-600 hover:bg-forest-700 disabled:opacity-50 whitespace-nowrap">
           {cityLoading
             ? <><div className="w-3 h-3 border-2 border-white rounded-full border-t-transparent animate-spin" /> Searching…</>
-            : '🔍 Search City'}
+            : ' Search City'}
         </button>
       </div>
 
@@ -261,7 +261,7 @@ export default function PlacesPage() {
       </div>
 
       {error && (
-        <div className="p-3 mb-4 text-sm text-red-700 border border-red-200 bg-red-50 rounded-xl">⚠️ {error}</div>
+        <div className="p-3 mb-4 text-sm text-red-700 border border-red-200 bg-red-50 rounded-xl"> {error}</div>
       )}
 
       <div className="mb-6 overflow-hidden border shadow-md rounded-2xl border-forest-200" style={{ height: '380px' }}>
@@ -273,7 +273,7 @@ export default function PlacesPage() {
           <RecenterMap center={mapCenter} />
           {userPos && (
             <>
-              <Marker position={userPos} icon={userIcon}><Popup>📍 Your location</Popup></Marker>
+              <Marker position={userPos} icon={userIcon}><Popup> Your location</Popup></Marker>
               <Circle center={userPos} radius={radius}
                 pathOptions={{ color: '#2d6a4f', fillColor: '#52b788', fillOpacity: 0.08, weight: 1 }} />
             </>
@@ -284,9 +284,9 @@ export default function PlacesPage() {
               <Popup>
                 <div className="text-sm">
                   <p className="font-bold">{p.name}</p>
-                  <p className="text-gray-500">{typeLabel[p.type] || '🌱 Agri Center'}</p>
+                  <p className="text-gray-500">{typeLabel[p.type] || ' Agri Center'}</p>
                   {p.address  && <p className="mt-1 text-gray-500">{p.address}</p>}
-                  {p.distance != null && <p className="mt-1 font-medium text-blue-500">📏 {p.distance.toFixed(1)} km away</p>}
+                  {p.distance != null && <p className="mt-1 font-medium text-blue-500"> {p.distance.toFixed(1)} km away</p>}
                 </div>
               </Popup>
             </Marker>
@@ -311,7 +311,7 @@ export default function PlacesPage() {
 
       {!loading && !error && places.length === 0 && (
         <div className="py-16 text-center text-gray-500">
-          <p className="mb-3 text-5xl">📍</p>
+          <p className="mb-3 text-5xl"></p>
           <p className="text-lg">No places found</p>
           <p style={{ fontFamily: 'Noto Sans Malayalam, sans-serif' }}>സ്ഥലങ്ങൾ കണ്ടെത്തിയില്ല</p>
           <p className="mt-2 text-sm">Try "Near Me", search a city, or increase the radius</p>
@@ -327,10 +327,10 @@ export default function PlacesPage() {
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-gray-800 truncate">{p.name}</p>
                 <p className="text-xs text-forest-600 mt-0.5">{typeLabel[p.type] || '🌱 Agri Center'}</p>
-                {p.address && <p className="mt-1 text-xs text-gray-400 truncate">📌 {p.address}</p>}
+                {p.address && <p className="mt-1 text-xs text-gray-400 truncate"> {p.address}</p>}
                 {p.phone   && <a href={`tel:${p.phone}`} onClick={e => e.stopPropagation()}
-                  className="block mt-1 text-xs text-forest-600 hover:underline">📞 {p.phone}</a>}
-                {p.distance != null && <p className="mt-1 text-xs font-medium text-blue-500">📏 {p.distance.toFixed(1)} km away</p>}
+                  className="block mt-1 text-xs text-forest-600 hover:underline"> {p.phone}</a>}
+                {p.distance != null && <p className="mt-1 text-xs font-medium text-blue-500"> {p.distance.toFixed(1)} km away</p>}
               </div>
             </div>
             <button onClick={e => { e.stopPropagation(); setSelected(p) }}

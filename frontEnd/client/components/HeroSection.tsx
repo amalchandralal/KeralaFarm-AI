@@ -37,14 +37,14 @@ const HeroSection = () => {
             to="/voice"
             className="flex items-center justify-center w-full gap-3 px-8 py-4 text-lg font-bold transition-all bg-white shadow-xl text-forest-700 rounded-2xl hover:shadow-2xl hover:bg-forest-50 active:scale-95 sm:w-auto"
           >
-            <span className="text-2xl">🎤</span>
+            <span className="text-2xl"></span>
             Try Voice Assistant
           </Link>
           <Link
             to="/scan"
             className="flex items-center justify-center w-full gap-3 px-8 py-4 text-lg font-bold text-white transition-all shadow-xl bg-earth-500 hover:bg-earth-600 rounded-2xl hover:shadow-2xl active:scale-95 sm:w-auto"
           >
-            <span className="text-2xl">📷</span>
+            <span className="text-2xl"></span>
             Scan a Crop
           </Link>
         </div>

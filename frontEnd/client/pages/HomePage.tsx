@@ -11,35 +11,35 @@ const features = [
     link: '/scan',
   },
   {
-    icon: '🌤️',
+    
     title: 'Weather Advisory',
     titleMal: 'കാലാവസ്ഥ നിർദ്ദേശം',
     description: 'Get personalized weather-based farming advice to plan your agricultural activities.',
     link: '/dashboard',
   },
   {
-    icon: '💰',
+    
     title: 'Market Prices',
     titleMal: 'വിപണി വില',
     description: 'Ask about current vegetable and crop prices in Kerala markets to get the best deals.',
     link: '/tracker',
   },
   {
-    icon: '🌱',
+    
     title: 'Fertilizer Guidance',
     titleMal: 'വളം നിർദ്ദേശം',
     description: 'Get expert advice on fertilizer usage, soil health, and crop nutrition management.',
     link: '/voice',
   },
   {
-    icon: '🎤',
+    
     title: 'Voice Assistant',
     titleMal: 'ശബ്ദ സഹായി',
     description: 'Ask any farming question in Malayalam or English and get instant AI-powered answers.',
     link: '/offline',
   },
   {
-    icon: '📍',
+    
     title: 'Farm Centers',
     titleMal: 'കൃഷി കേന്ദ്രങ്ങൾ',
     description: 'Find nearby agricultural service centers, Krishi Bhavans, and farming support places.',
@@ -61,11 +61,7 @@ const HomePage = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {features.map((f, i) => (
-            <FeatureCard key={i} {...f} />
-          ))}
-        </div>
+        
       </section>
 
       {/* How it Works */}
@@ -74,15 +70,15 @@ const HomePage = () => {
           <h2 className="mb-10 text-2xl font-bold text-center md:text-3xl">How It Works</h2>
           <div className="grid grid-cols-1 gap-8 text-center sm:grid-cols-3">
             {[
-              { step: '1', icon: '🎤', text: 'Speak your question in Malayalam or English', mal: 'ചോദ്യം ചോദിക്കൂ' },
-              { step: '2', icon: '🤖', text: 'Our AI analyzes and finds the best answer for you', mal: 'AI ഉത്തരം തിരയുന്നു' },
-              { step: '3', icon: '🔊', text: 'Hear the answer read aloud in your language', mal: 'ഉത്തരം കേൾക്കൂ' },
+              { step: '1',  text: 'Speak your question in Malayalam or English', mal: 'ചോദ്യം ചോദിക്കൂ' },
+              { step: '2',  text: 'Our AI analyzes and finds the best answer for you', mal: 'AI ഉത്തരം തിരയുന്നു' },
+              { step: '3',  text: 'Hear the answer read aloud in your language', mal: 'ഉത്തരം കേൾക്കൂ' },
             ].map(item => (
               <div key={item.step} className="flex flex-col items-center gap-3">
                 <div className="flex items-center justify-center text-2xl font-bold rounded-full w-14 h-14 bg-white/20">
                   {item.step}
                 </div>
-                <div className="text-4xl">{item.icon}</div>
+                <div className="text-4xl"></div>
                 <p className="text-forest-100">{item.text}</p>
                 <p className="text-sm text-forest-300" style={{ fontFamily: 'Noto Sans Malayalam, sans-serif' }}>
                   {item.mal}
@@ -96,7 +92,7 @@ const HomePage = () => {
       {/* CTA Banner */}
       <section className="py-10 bg-earth-50 border-y border-earth-200">
         <div className="text-center page-container">
-          <p className="mb-2 text-2xl">🌾</p>
+          <p className="mb-2 text-2xl"></p>
           <h3 className="mb-2 text-xl font-bold text-earth-800">Free for all Kerala farmers</h3>
           <p className="mb-6 text-gray-500" style={{ fontFamily: 'Noto Sans Malayalam, sans-serif' }}>
             എല്ലാ കേരള കർഷകർക്കും സൗജന്യം
