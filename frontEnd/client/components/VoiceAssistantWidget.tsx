@@ -14,12 +14,14 @@ const stripMarkdown = (txt: string) =>
     .trim()
 
 export default function VoiceAssistantWidget() {
-  const [question, setQuestion] = useState('')
-  const [answer,   setAnswer]   = useState('')
-  const [loading,  setLoading]  = useState(false)
-  const [error,    setError]    = useState('')
-  const [lang,     setLang]     = useState<'ml-IN' | 'en-IN'>('ml-IN')
-  const [seconds,  setSeconds]  = useState(0)
+  const [question,   setQuestion]   = useState('')
+  const [answer,     setAnswer]     = useState('')
+  const [loading,    setLoading]    = useState(false)
+  const [error,      setError]      = useState('')
+  const [lang,       setLang]       = useState<'ml-IN' | 'en-IN'>('ml-IN')
+  const [seconds,    setSeconds]    = useState(0)
+  const [isPaused,   setIsPaused]   = useState(false)
+  const [isSpeakingState, setIsSpeakingState] = useState(false)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   /* ── recording clock ── */
@@ -44,6 +46,8 @@ export default function VoiceAssistantWidget() {
       const data = await askVoiceAssistant(text)
       const clean = stripMarkdown(data.answer || '')
       setAnswer(clean)
+      setIsSpeakingState(true)
+      setIsPaused(false)
       speak(clean, lang)
     } catch {
       setError('Network error. Please check your connection and try again.')
@@ -53,7 +57,8 @@ export default function VoiceAssistantWidget() {
   }
 
   /* ── voice hook ── */
-  const { isListening, interimText, startListening, stopListening, speak } = useVoice({
+  const { isListening, interimText, startListening, stopListening, speak,
+          stopSpeaking, pauseSpeaking, resumeSpeaking } = useVoice({
     lang,
     onResult: (text) => { stopClock(); setQuestion(text); sendQuestion(text) },
     onError:  (msg)  => { stopClock(); setError(msg) },
@@ -67,6 +72,28 @@ export default function VoiceAssistantWidget() {
   const changeLang = (l: 'ml-IN' | 'en-IN') => {
     if (isListening) stopListening()
     setLang(l); setError('')
+  }
+
+  const handleStop = () => {
+    stopSpeaking()
+    setIsSpeakingState(false)
+    setIsPaused(false)
+  }
+
+  const handlePause = () => {
+    pauseSpeaking()
+    setIsPaused(true)
+  }
+
+  const handleResume = () => {
+    resumeSpeaking()
+    setIsPaused(false)
+  }
+
+  const handleReadAloud = () => {
+    setIsSpeakingState(true)
+    setIsPaused(false)
+    speak(answer, lang)
   }
 
   /* ──────────────────────── render ──────────────────────── */
@@ -208,16 +235,52 @@ export default function VoiceAssistantWidget() {
         <div className="p-5 border-2 bg-gradient-to-br from-forest-50 to-earth-50 border-forest-200 rounded-2xl fade-in-up">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <span className="text-2xl"></span>
+              <span className="text-2xl">🌿</span>
               <p className="text-lg font-bold text-forest-800">AI Answer</p>
             </div>
-            <button
-              onClick={() => speak(answer, lang)}
-              className="flex items-center gap-1.5 text-sm font-medium text-forest-600
-                hover:text-white hover:bg-forest-600 bg-forest-100 px-3 py-1.5 rounded-lg transition-all"
-            >
-               Read aloud
-            </button>
+
+            {/* ── Playback controls ── */}
+            <div className="flex items-center gap-2">
+              {!isSpeakingState && (
+                <button
+                  onClick={handleReadAloud}
+                  className="flex items-center gap-1.5 text-sm font-medium text-forest-600
+                    hover:text-white hover:bg-forest-600 bg-forest-100 px-3 py-1.5 rounded-lg transition-all"
+                >
+                  🔊 Read aloud
+                </button>
+              )}
+
+              {isSpeakingState && !isPaused && (
+                <button
+                  onClick={handlePause}
+                  className="flex items-center gap-1.5 text-sm font-medium text-yellow-700
+                    hover:text-white hover:bg-yellow-500 bg-yellow-100 px-3 py-1.5 rounded-lg transition-all"
+                >
+                  ⏸ Pause
+                </button>
+              )}
+
+              {isSpeakingState && isPaused && (
+                <button
+                  onClick={handleResume}
+                  className="flex items-center gap-1.5 text-sm font-medium text-forest-600
+                    hover:text-white hover:bg-forest-600 bg-forest-100 px-3 py-1.5 rounded-lg transition-all"
+                >
+                  ▶ Resume
+                </button>
+              )}
+
+              {isSpeakingState && (
+                <button
+                  onClick={handleStop}
+                  className="flex items-center gap-1.5 text-sm font-medium text-red-600
+                    hover:text-white hover:bg-red-500 bg-red-100 px-3 py-1.5 rounded-lg transition-all"
+                >
+                  ⏹ Stop
+                </button>
+              )}
+            </div>
           </div>
           <p className="text-base leading-relaxed text-gray-800 whitespace-pre-line">{answer}</p>
         </div>
