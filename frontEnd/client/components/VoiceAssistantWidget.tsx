@@ -216,7 +216,7 @@ export default function VoiceAssistantWidget() {
               className="flex items-center gap-1.5 text-sm font-medium text-forest-600
                 hover:text-white hover:bg-forest-600 bg-forest-100 px-3 py-1.5 rounded-lg transition-all"
             >
-              🔊 Read aloud
+               Read aloud
             </button>
           </div>
           <p className="text-base leading-relaxed text-gray-800 whitespace-pre-line">{answer}</p>

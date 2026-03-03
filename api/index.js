@@ -282,27 +282,74 @@ app.post("/voice-assistant", async (req, res) => {
 
 });
 //whether //
-app.get("/dashboard", async (req,res)=>{
+app.get("/dashboard", async (req, res) => {
+  try {
+    const weatherRes = await axios.get(
+      `https://api.openweathermap.org/data/2.5/weather?lat=10.8505&lon=76.2711&appid=${process.env.WEATHER_KEY}&units=metric`
+    );
 
- try{
+    const w = weatherRes.data;
+    const temp      = w.main.temp;
+    const humidity  = w.main.humidity;
+    const windSpeed = w.wind.speed * 3.6;
+    const rainfall  = w.rain?.["1h"] ?? w.rain?.["3h"] ?? 0;
+    const condition = w.weather[0].main;
+    const clouds    = w.clouds.all;
 
-  const weather = await axios.get(
-   `https://api.openweathermap.org/data/2.5/weather?lat=10.8505&lon=76.2711&appid=${process.env.WEATHER_KEY}&units=metric`
-  );
+    const alerts = [];
+    const recommendations = [];
 
-  res.json({
-    weather: weather.data,
-    alerts: [],
-    recommendations: []
-  });
+    // Alerts
+    if (humidity > 80)
+      alerts.push({ title: "Stem Borer Alert", desc: "High humidity increases stem borer risk in paddy. Apply Chlorpyrifos 2.5ml/L if observed.", severity: "high" });
 
- }catch(err){
-  console.log(err.response?.data);
-  res.status(500).json({error:"Weather API failed"});
- }
+    if (humidity > 75 && clouds > 60)
+      alerts.push({ title: "Blast Disease Risk", desc: "Cloudy and humid — ideal for rice blast. Use Tricyclazole spray preventively.", severity: "medium" });
 
+    if (condition === "Rain" || condition === "Thunderstorm" || rainfall > 10)
+      alerts.push({ title: "Waterlogging Warning", desc: "Heavy rainfall detected. Ensure drainage channels are clear to prevent root rot.", severity: "high" });
+
+    if (temp > 35)
+      alerts.push({ title: "Heat Stress Alert", desc: `Temperature at ${Math.round(temp)}°C. Avoid field work 11am–3pm. Increase irrigation frequency.`, severity: "high" });
+
+    if (windSpeed > 25)
+      alerts.push({ title: "High Wind Warning", desc: `Wind at ${Math.round(windSpeed)} km/h. Avoid spraying — drift risk.`, severity: "medium" });
+
+    if (temp > 32 && humidity < 50 && condition === "Clear")
+      alerts.push({ title: "Rhinoceros Beetle Risk", desc: "Dry and hot — check coconut crown for beetle damage.", severity: "medium" });
+
+    if (humidity > 80 && temp > 25 && (condition === "Rain" || condition === "Drizzle"))
+      alerts.push({ title: "Fungal Risk High", desc: "Wet and warm — apply copper fungicide to tomato and brinjal.", severity: "high" });
+
+    // Recommendations
+    if (condition === "Clouds" || clouds > 50)
+      recommendations.push({ text: "Good time to apply basal fertilizer to paddy before rain.", tag: "Fertilizer" });
+
+    if (condition === "Rain" || condition === "Drizzle" || rainfall > 5)
+      recommendations.push({ text: `Skip irrigation today — natural rainfall of ${rainfall > 0 ? rainfall + "mm" : "rain"} expected.`, tag: "Water" });
+    else if (temp > 35 && humidity < 40)
+      recommendations.push({ text: "Hot and dry — increase irrigation frequency to prevent crop wilting.", tag: "Water" });
+
+    if (rainfall > 15 || condition === "Thunderstorm")
+      recommendations.push({ text: "Heavy rainfall detected. Harvest ripe vegetables now to avoid damage.", tag: "Harvest" });
+
+    if (humidity > 70 && (condition === "Clouds" || condition === "Drizzle"))
+      recommendations.push({ text: "Apply fungicide spray before forecast rainfall.", tag: "Pest Control" });
+
+    if (condition === "Clear" && windSpeed < 15)
+      recommendations.push({ text: "Clear skies and calm wind — ideal conditions for pesticide or fertilizer spraying.", tag: "Pest Control" });
+
+    if (temp > 34)
+      recommendations.push({ text: `High temperature (${Math.round(temp)}°C) — apply mulch around crops to retain soil moisture.`, tag: "Advisory" });
+
+    res.json({ weather: w, alerts, recommendations });
+
+  } catch (err) {
+    console.log(err.response?.data);
+    res.status(500).json({ error: "Weather API failed" });
+  }
 });
-console.log(process.env.WEATHER_KEY);
+
 // -------------------- SERVER --------------------
 app.listen(5000, () => {
   console.log("Server is running on port 5000");
