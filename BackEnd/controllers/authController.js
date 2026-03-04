@@ -22,7 +22,7 @@ const login = async (req, res) => {
     if (!user) return res.status(404).json("User not found");
     if (user.password !== password) return res.status(422).json("Password incorrect");
     jwt.sign({ email: user.email, id: user._id }, JWT_SECRET, {}, (err, token) => {
-      if (err) throw err;
+      if (err) return res.status(500).json({ error: "Token generation failed" }); // ← fixed
       res.cookie("token", token).json(user);
     });
   } catch (err) {
@@ -34,7 +34,7 @@ const profile = (req, res) => {
   const { token } = req.cookies;
   if (!token) return res.json("Not logged in");
   jwt.verify(token, JWT_SECRET, {}, async (err, userData) => {
-    if (err) throw err;
+    if (err) return res.status(401).json({ error: "Invalid token, please login again" }); // ← fixed
     const user = await User.findById(userData.id);
     res.json(user);
   });
