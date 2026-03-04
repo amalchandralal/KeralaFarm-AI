@@ -229,7 +229,7 @@ export default function DashboardPage() {
     // Existing dashboard fetch
     const fetchDashboard = async () => {
       try {
-        const res  = await fetch("http://localhost:5000/dashboard");
+        const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/dashboard`);
         const data = await res.json();
         setDashboard(data);
       } catch (err) {
