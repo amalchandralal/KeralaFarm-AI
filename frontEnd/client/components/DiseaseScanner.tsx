@@ -9,6 +9,10 @@ interface DiseaseResult {
   confidence_level?: number | string;
   [key: string]: unknown;
 }
+
+// ── Fix: use env variable instead of hardcoded localhost ──────────────────────
+const API = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+
 const translateToMalayalam = async (result: DiseaseResult): Promise<DiseaseResult> => {
   const fields = ['disease_name', 'possible_causes', 'suggested_treatment', 'fertilizer_guidance'] as const
 
@@ -16,7 +20,7 @@ const translateToMalayalam = async (result: DiseaseResult): Promise<DiseaseResul
 
   await Promise.all(fields.map(async (field) => {
     if (!result[field]) return
-    const res = await fetch('http://localhost:5000/translate', {
+    const res = await fetch(`${API}/translate`, {  // ← fixed
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text: result[field], field }),

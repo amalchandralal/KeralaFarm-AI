@@ -11,6 +11,9 @@ interface UseVoiceOptions {
   onError?: (error: string) => void
 }
 
+// ── Fix: use env variable instead of hardcoded localhost ──────────────────────
+const API = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+
 export const useVoice = ({ lang = 'ml-IN', onResult, onError }: UseVoiceOptions = {}) => {
   const [isListening, setIsListening]   = useState(false)
   const [interimText, setInterimText]   = useState('')
@@ -24,7 +27,6 @@ export const useVoice = ({ lang = 'ml-IN', onResult, onError }: UseVoiceOptions 
   const langRef         = useRef(lang)
   langRef.current = lang
 
-  // Track whether we've already fallen back to browser TTS to prevent double playback
   const ttsAborted      = useRef(false)
   const isSpeaking      = useRef(false)
 
@@ -136,18 +138,16 @@ export const useVoice = ({ lang = 'ml-IN', onResult, onError }: UseVoiceOptions 
   }, [commit])
 
   const speak = useCallback((text: string, speakLang = 'ml-IN') => {
-    // ── Cancel everything first ──────────────────────────────────────────────
     window.speechSynthesis.cancel()
     const w = window as unknown as { _ttsAudio?: HTMLAudioElement }
     if (w._ttsAudio) {
-      w._ttsAudio.onended = null   // detach handlers BEFORE pausing
-      w._ttsAudio.onerror = null   //  so they can't fire after cancel
+      w._ttsAudio.onended = null
+      w._ttsAudio.onerror = null
       w._ttsAudio.pause()
       w._ttsAudio.src = ''
       w._ttsAudio = undefined
     }
 
-    // Malayalam — proxy through backend, uses Google TTS voice
     if (speakLang === 'ml-IN' || speakLang === 'ml') {
       const MAX = 180
       const rawChunks = text.match(/[^.!?।\n]{1,180}[.!?।\n]?/g) || [text]
@@ -159,18 +159,15 @@ export const useVoice = ({ lang = 'ml-IN', onResult, onError }: UseVoiceOptions 
       }
       if (cur.trim()) chunks.push(cur.trim())
 
-      // Reset abort flag for this new speak() call
       ttsAborted.current = false
       isSpeaking.current = true
 
       let idx = 0
 
       const fallbackToBrowser = (fromIdx: number) => {
-        // Guard: only fall back once — prevents double audio
         if (ttsAborted.current) return
         ttsAborted.current = true
 
-        // Stop any audio element that may still be alive
         const wa = window as unknown as { _ttsAudio?: HTMLAudioElement }
         if (wa._ttsAudio) {
           wa._ttsAudio.onended = null
@@ -180,7 +177,6 @@ export const useVoice = ({ lang = 'ml-IN', onResult, onError }: UseVoiceOptions 
           wa._ttsAudio = undefined
         }
 
-        // Cancel any browser TTS that might have snuck in
         window.speechSynthesis.cancel()
 
         const remaining = chunks.slice(fromIdx).join(' ')
@@ -193,14 +189,14 @@ export const useVoice = ({ lang = 'ml-IN', onResult, onError }: UseVoiceOptions 
       }
 
       const playNext = () => {
-        // If we already fell back to browser TTS, stop the audio chain
         if (ttsAborted.current) return
         if (idx >= chunks.length) return
 
-        const chunkIdx = idx        // capture before increment
+        const chunkIdx = idx
         const chunk    = chunks[idx++]
 
-        const url   = `http://localhost:5000/tts?text=${encodeURIComponent(chunk)}&lang=ml`
+        // ── Fix: use API env variable ─────────────────────────────────────
+        const url   = `${API}/tts?text=${encodeURIComponent(chunk)}&lang=ml`
         const audio = new Audio(url)
         ;(window as unknown as { _ttsAudio: HTMLAudioElement })._ttsAudio = audio
 
@@ -210,12 +206,10 @@ export const useVoice = ({ lang = 'ml-IN', onResult, onError }: UseVoiceOptions 
         }
 
         audio.onerror = () => {
-          // Backend failed — fall back to browser TTS for remaining text
           fallbackToBrowser(chunkIdx)
         }
 
         audio.play().catch(() => {
-          // play() rejected (e.g. autoplay policy) — fall back
           fallbackToBrowser(chunkIdx)
         })
       }

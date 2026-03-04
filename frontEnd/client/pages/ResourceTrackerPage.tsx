@@ -38,7 +38,7 @@ const catIcon: Record<string, string> = {
   fertilizer: '🌱', pesticide: '💊', labor: '👷', seed: '🌾', equipment: '🔧', other: '📦'
 }
 
-const API = 'http://localhost:5000'
+const API = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 
 export default function ResourceTrackerPage() {
   const [tab,           setTab]           = useState<'inputs' | 'market' | 'schemes'>('inputs')
