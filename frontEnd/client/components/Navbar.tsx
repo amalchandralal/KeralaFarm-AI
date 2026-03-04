@@ -16,12 +16,11 @@ const navLinks = [
 const Navbar = () => {
   const { pathname } = useLocation()
   const navigate = useNavigate()
-  const { user, setUser } = useAuth()
-  const [menuOpen, setMenuOpen]       = useState(false)
+  const { user, logout } = useAuth()
+  const [menuOpen, setMenuOpen]         = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -33,15 +32,12 @@ const Navbar = () => {
   }, [])
 
   const handleLogout = async () => {
-    try {
-      await fetch('http://localhost:5000/logout', { method: 'POST', credentials: 'include' })
-    } catch (_) {}
-    setUser(null)
+    await logout()
     setDropdownOpen(false)
+    setMenuOpen(false)
     navigate('/')
   }
 
-  // Get initials from name
   const initials = user?.name
     ? user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
     : '?'
@@ -67,13 +63,11 @@ const Navbar = () => {
                 <Link
                   key={link.to}
                   to={link.to}
-                  className={`
-                    px-3 py-1.5 rounded-md text-sm font-medium transition-colors
-                    ${isActive
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                    isActive
                       ? 'bg-yellow-400 text-forest-900 font-semibold'
                       : 'text-gray-200 hover:bg-forest-700 hover:text-white'
-                    }
-                  `}
+                  }`}
                 >
                   {link.label}
                 </Link>
@@ -81,16 +75,14 @@ const Navbar = () => {
             })}
           </div>
 
-          {/* Auth section */}
+          {/* Desktop auth */}
           <div className="items-center hidden gap-3 md:flex">
             {user ? (
-              // ── Logged in: avatar + dropdown ──────────────────────────
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setDropdownOpen(prev => !prev)}
                   className="flex items-center gap-2 px-2 py-1 transition-colors rounded-lg hover:bg-forest-700"
                 >
-                  {/* Avatar circle with initials */}
                   <div className="flex items-center justify-center w-8 h-8 text-sm font-bold bg-yellow-400 rounded-full text-forest-900">
                     {initials}
                   </div>
@@ -102,64 +94,27 @@ const Navbar = () => {
                   </svg>
                 </button>
 
-                {/* Dropdown menu */}
                 {dropdownOpen && (
                   <div className="absolute right-0 z-50 w-48 mt-2 overflow-hidden bg-white border border-gray-100 shadow-lg rounded-xl">
-                    {/* User info header */}
                     <div className="px-4 py-3 border-b border-gray-100 bg-forest-50">
                       <p className="text-sm font-semibold truncate text-forest-800">{user.name}</p>
                       <p className="text-xs text-gray-500 truncate">{user.email}</p>
                     </div>
-
-                    {/* Menu items */}
-                    <Link
-                      to="/profile"
-                      onClick={() => setDropdownOpen(false)}
-                      className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-forest-50 transition-colors"
-                    >
-                      <span>👤</span> My Profile
-                    </Link>
-                    <Link
-                      to="/bookings"
-                      onClick={() => setDropdownOpen(false)}
-                      className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-forest-50 transition-colors"
-                    >
-                      <span>📅</span> My Bookings
-                    </Link>
-                    <Link
-                      to="/tracker"
-                      onClick={() => setDropdownOpen(false)}
-                      className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-forest-50 transition-colors"
-                    >
-                      <span>📊</span> Resource Tracker
-                    </Link>
-
+                    <Link to="/profile"  onClick={() => setDropdownOpen(false)} className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-forest-50 transition-colors">👤 My Profile</Link>
+                    <Link to="/bookings" onClick={() => setDropdownOpen(false)} className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-forest-50 transition-colors">📅 My Bookings</Link>
+                    <Link to="/tracker"  onClick={() => setDropdownOpen(false)} className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-forest-50 transition-colors">📊 Resource Tracker</Link>
                     <div className="border-t border-gray-100">
-                      <button
-                        onClick={handleLogout}
-                        className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                      >
-                        <span>🚪</span> Logout
+                      <button onClick={handleLogout} className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                        🚪 Logout
                       </button>
                     </div>
                   </div>
                 )}
               </div>
             ) : (
-              // ── Not logged in: Login + Register ───────────────────────
               <>
-                <Link
-                  to="/login"
-                  className="text-sm font-medium text-gray-200 hover:text-white transition-colors px-3 py-1.5"
-                >
-                  Login
-                </Link>
-                <Link
-                  to="/register"
-                  className="text-sm font-semibold bg-yellow-400 hover:bg-yellow-300 text-forest-900 px-4 py-1.5 rounded-md transition-colors"
-                >
-                  Register
-                </Link>
+                <Link to="/login"    className="text-sm font-medium text-gray-200 hover:text-white transition-colors px-3 py-1.5">Login</Link>
+                <Link to="/register" className="text-sm font-semibold bg-yellow-400 hover:bg-yellow-300 text-forest-900 px-4 py-1.5 rounded-md transition-colors">Register</Link>
               </>
             )}
           </div>
@@ -190,24 +145,20 @@ const Navbar = () => {
                 key={link.to}
                 to={link.to}
                 onClick={() => setMenuOpen(false)}
-                className={`
-                  block px-3 py-2 rounded-md text-sm font-medium transition-colors
-                  ${isActive
+                className={`block px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  isActive
                     ? 'bg-yellow-400 text-forest-900 font-semibold'
                     : 'text-gray-200 hover:bg-forest-700 hover:text-white'
-                  }
-                `}
+                }`}
               >
                 {link.label}
               </Link>
             )
           })}
 
-          {/* Mobile auth section */}
           <div className="flex flex-col gap-2 pt-2 border-t border-forest-700">
             {user ? (
               <>
-                {/* Mobile user info */}
                 <div className="flex items-center gap-3 px-3 py-2">
                   <div className="flex items-center justify-center text-sm font-bold bg-yellow-400 rounded-full w-9 h-9 text-forest-900 shrink-0">
                     {initials}
@@ -219,12 +170,7 @@ const Navbar = () => {
                 </div>
                 <Link to="/profile"  onClick={() => setMenuOpen(false)} className="block px-3 py-2 text-sm text-gray-200 hover:text-white">👤 My Profile</Link>
                 <Link to="/bookings" onClick={() => setMenuOpen(false)} className="block px-3 py-2 text-sm text-gray-200 hover:text-white">📅 My Bookings</Link>
-                <button
-                  onClick={() => { handleLogout(); setMenuOpen(false) }}
-                  className="block w-full px-3 py-2 text-sm text-left text-red-400 hover:text-red-300"
-                >
-                  🚪 Logout
-                </button>
+                <button onClick={handleLogout} className="block w-full px-3 py-2 text-sm text-left text-red-400 hover:text-red-300">🚪 Logout</button>
               </>
             ) : (
               <>

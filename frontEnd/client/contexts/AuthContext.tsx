@@ -30,14 +30,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const refreshUser = async () => {
     try {
       const data = await getProfile()
-      // Handle multiple response shapes:
-      // { name, email } OR { user: { name, email } } OR { data: { name, email } }
+
+      // ── If backend returns "Not logged in" string → not authenticated ──
+      if (!data || typeof data === 'string') {
+        setUser(null)
+        return
+      }
+
+      // ── If backend returns { error: ... } → not authenticated ──────────
+      if (data?.error) {
+        setUser(null)
+        return
+      }
+
+      // ── Extract user from various response shapes ──────────────────────
       const extracted =
         data?.user ||
         data?.data ||
         data?.profile ||
         (data?.name || data?.email ? data : null)
-      setUser(extracted || data)
+
+      setUser(extracted || null)
     } catch {
       setUser(null)
     } finally {
