@@ -7,3 +7,5 @@ api/.env
 
 # Logs
 *.log
+dist/
+uploads/

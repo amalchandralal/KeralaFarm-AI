@@ -1,3 +1,11 @@
+const axios = require("axios");
+
+const OWM_KEY = process.env.WEATHER_KEY;
+const LAT = process.env.LAT || 10.85;
+const LON = process.env.LON || 76.27;
+
+// ── Existing alert/recommendation logic ──────────────────────────────────────
+
 const buildAlerts = ({ temp, humidity, windSpeed, rainfall, condition, clouds }) => {
   const alerts = [];
 
@@ -40,4 +48,55 @@ const buildRecommendations = ({ temp, humidity, windSpeed, rainfall, condition, 
   return recommendations;
 };
 
-module.exports = { buildAlerts, buildRecommendations };
+// ── Fetch AQI from OWM Air Pollution API ─────────────────────────────────────
+
+const fetchAQI = async () => {
+  const url = `https://api.openweathermap.org/data/2.5/air_pollution?lat=${LAT}&lon=${LON}&appid=${OWM_KEY}`;
+  const { data } = await axios.get(url);
+  return data;
+};
+
+// ── Fetch hourly forecast ─────────────────────────────────────────────────────
+// UV Index  → Open-Meteo (free, no key needed)
+// Rain/temp → OWM /forecast (free tier)
+
+const fetchHourlyForecast = async () => {
+  const [openMeteoRes, owmRes] = await Promise.allSettled([
+    axios.get(
+      `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&hourly=uv_index&timezone=Asia%2FKolkata&forecast_days=1`
+    ),
+    axios.get(
+      `https://api.openweathermap.org/data/2.5/forecast?lat=${LAT}&lon=${LON}&units=metric&cnt=8&appid=${OWM_KEY}`
+    ),
+  ]);
+
+  // Current hour UV from Open-Meteo
+  let currentUVI = 0;
+  if (openMeteoRes.status === "fulfilled") {
+    const currentHour = new Date().getHours();
+    currentUVI = openMeteoRes.value.data.hourly?.uv_index?.[currentHour] ?? 0;
+  } else {
+    console.warn("Open-Meteo UV fetch failed:", openMeteoRes.reason?.message);
+  }
+
+  // Hourly slots from OWM /forecast
+  let hourlySlots = [];
+  if (owmRes.status === "fulfilled") {
+    hourlySlots = owmRes.value.data.list.map((h) => ({
+      dt:   h.dt,
+      temp: h.main.temp,
+      pop:  h.pop  ?? 0,
+      rain: h.rain ?? {},
+      uvi:  0,
+    }));
+  } else {
+    console.warn("OWM forecast fetch failed:", owmRes.reason?.message);
+  }
+
+  return {
+    current: { uvi: currentUVI },
+    hourly:  hourlySlots,
+  };
+};
+
+module.exports = { buildAlerts, buildRecommendations, fetchAQI, fetchHourlyForecast };

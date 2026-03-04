@@ -1,5 +1,5 @@
 const axios = require("axios");
-const { buildAlerts, buildRecommendations } = require("../services/weatherService");
+const { buildAlerts, buildRecommendations, fetchAQI, fetchHourlyForecast } = require("../services/weatherService");
 
 const getDashboard = async (req, res) => {
   try {
@@ -28,4 +28,24 @@ const getDashboard = async (req, res) => {
   }
 };
 
-module.exports = { getDashboard };
+const getAQI = async (req, res) => {
+  try {
+    const data = await fetchAQI();
+    res.json(data);
+  } catch (err) {
+    console.error("AQI controller error:", err.message);
+    res.status(500).json({ error: "Failed to fetch AQI data" });
+  }
+};
+
+const getHourlyForecast = async (req, res) => {
+  try {
+    const data = await fetchHourlyForecast();
+    res.json(data);
+  } catch (err) {
+    console.error("Hourly forecast controller error:", err.message);
+    res.status(500).json({ error: "Failed to fetch hourly forecast" });
+  }
+}; // ← this was missing
+
+module.exports = { getDashboard, getAQI, getHourlyForecast };

@@ -7,7 +7,7 @@ const ScanPage = () => {
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="mb-8 text-center">
-          <div className="mb-3 text-6xl">📷</div>
+          <div className="mb-3 text-6xl"></div>
           <h1 className="section-title">Crop Disease Scanner</h1>
           <p className="text-gray-500" style={{ fontFamily: 'Noto Sans Malayalam, sans-serif' }}>
             വിള രോഗ നിർണ്ണയം
