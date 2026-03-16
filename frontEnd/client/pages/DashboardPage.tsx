@@ -1,590 +1,332 @@
-import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
-import { getAQI, getHourlyForecast } from "../services/api";
+import React, { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
+import { useLocation } from '../hooks/useLocation'
+import { getDashboard, getAQI, getHourlyForecast } from '../services/api'
 
-// ── Types ────────────────────────────────────────────────────────────────────
-
-interface IrrigationSlot {
-  time: string;         // e.g. "06:00"
-  action: "irrigate" | "skip" | "optional";
-  reason: string;
-  rainChance: number;   // 0–100
-  temp: number;
+// ─── Types ───────────────────────────────────────────────────────────────────
+interface WeatherData {
+  main:    { temp: number; humidity: number; feels_like: number; pressure: number }
+  weather: { main: string; description: string; icon: string }[]
+  wind:    { speed: number; deg: number }
+  clouds:  { all: number }
+  name:    string
+  rain?:   { '1h'?: number; '3h'?: number }
 }
 
-// ── Kerala crop calendar (static fallback alerts) ────────────────────────────
+interface Alert  { icon: string; title: string; desc: string; severity: 'high'|'medium'|'low' }
+interface Rec    { icon: string; text: string;  tag: string }
+interface HourlyItem { time: string; temp: number; rain: number; icon: string }
+interface AQIData    { aqi: number; label: string; components?: Record<string, number> }
 
-const CROP_ALERTS: Record<
-  string,
-  { icon: string; title: string; desc: string; severity: "high" | "medium" | "low" }[]
-> = {
-  paddy: [
-    { icon: " ", title: "Stem Borer Alert",     desc: "High humidity (>80%) increases stem borer risk in paddy. Apply Chlorpyrifos 2.5ml/L if observed.", severity: "high" },
-    { icon: " ", title: "Blast Disease Risk",    desc: "Cool nights with heavy dew — ideal for rice blast. Use Tricyclazole spray preventively.",           severity: "medium" },
-    { icon: " ", title: "Waterlogging Warning",  desc: "Heavy rainfall forecast. Ensure drainage channels are clear to prevent root rot.",                  severity: "high" },
-  ],
-  coconut: [
-    { icon: " ", title: "Rhinoceros Beetle", desc: "Dry weather followed by rain increases beetle activity. Check crown for damage.",       severity: "medium" },
-    { icon: " ", title: "Bud Rot Risk",      desc: "Wet conditions favor bud rot. Apply Bordeaux mixture to crown as preventive measure.", severity: "low" },
-  ],
-  banana: [
-    { icon: " ", title: "Panama Wilt Watch", desc: "Avoid flood irrigation. Panama wilt spreads through waterlogged soil.",                     severity: "high" },
-    { icon: " ", title: "Sigatoka Disease",  desc: "Overcast weather conditions — monitor leaves for yellow streaks.",                         severity: "medium" },
-  ],
-  vegetable: [
-    { icon: " ", title: "Aphid Surge",      desc: "Humidity spike expected. Spray Neem oil solution (5ml/L) on vegetable crops.",     severity: "medium" },
-    { icon: " ", title: "Fungal Risk High", desc: "Continuous rain forecast. Apply copper fungicide to tomato and brinjal.",            severity: "high" },
-  ],
-};
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+const severityBorder = { high: 'border-red-400 bg-red-50', medium: 'border-yellow-400 bg-yellow-50', low: 'border-green-400 bg-green-50' }
+const severityBadge  = { high: 'bg-red-100 text-red-700',  medium: 'bg-yellow-100 text-yellow-700', low: 'bg-green-100 text-green-700' }
 
-const STATIC_FORECAST = [
-  { day: "Today", icon: " ", high: 29, low: 24, rain: "40%" },
-  { day: "Tue",   icon: " ", high: 27, low: 23, rain: "80%" },
-  { day: "Wed",   icon: " ", high: 26, low: 22, rain: "90%" },
-  { day: "Thu",   icon: " ", high: 28, low: 23, rain: "30%" },
-  { day: "Fri",   icon: " ", high: 31, low: 25, rain: "10%" },
-];
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
-function conditionIcon(main: string): string {
-  const map: Record<string, string> = {
-    Clear: " ", Clouds: " ", Rain: " ", Drizzle: " ",
-    Thunderstorm: " ", Snow: " ", Mist: " ", Fog: " ", Haze: " ",
-  };
-  return map[main] || " ";
+const aqiColor = (aqi: number) => {
+  if (aqi <= 50)  return 'text-green-600 bg-green-50'
+  if (aqi <= 100) return 'text-yellow-600 bg-yellow-50'
+  if (aqi <= 150) return 'text-orange-600 bg-orange-50'
+  return 'text-red-600 bg-red-50'
 }
 
-function guessSeverity(alert: any): "high" | "medium" | "low" {
-  if (alert.severity) return alert.severity;
-  const text = (alert.title + " " + alert.desc).toLowerCase();
-  if (text.includes("high") || text.includes("warning") || text.includes("danger")) return "high";
-  if (text.includes("medium") || text.includes("moderate") || text.includes("risk")) return "medium";
-  return "low";
+const windDir = (deg: number) => {
+  const dirs = ['N','NE','E','SE','S','SW','W','NW']
+  return dirs[Math.round(deg / 45) % 8]
 }
 
-function guessTag(text: string): string {
-  const lower = text.toLowerCase();
-  if (lower.includes("fertilizer") || lower.includes("basal"))                         return "Fertilizer";
-  if (lower.includes("irrigat") || lower.includes("water") || lower.includes("rainfall")) return "Water";
-  if (lower.includes("harvest"))                                                        return "Harvest";
-  if (lower.includes("fungicide") || lower.includes("pest") || lower.includes("spray") || lower.includes("neem")) return "Pest Control";
-  if (lower.includes("sow") || lower.includes("plant") || lower.includes("seed"))      return "Planting";
-  return "Advisory";
+// ─── Location Permission Banner ───────────────────────────────────────────────
+const LocationBanner = ({ denied, error, onRetry }: { denied: boolean; error: string; onRetry: () => void }) => {
+  if (!error) return null
+  return (
+    <div className={`rounded-xl p-3 mb-4 flex items-center gap-3 text-sm ${
+      denied ? 'bg-yellow-50 border border-yellow-200' : 'bg-blue-50 border border-blue-200'
+    }`}>
+      <span className="text-xl">{denied ? '📍' : '🌐'}</span>
+      <div className="flex-1">
+        <p className={denied ? 'text-yellow-700' : 'text-blue-700'}>{error}</p>
+        {denied && (
+          <p className="text-xs text-yellow-500 mt-0.5">
+            To enable: click 🔒 in address bar → Allow Location
+          </p>
+        )}
+      </div>
+      <button onClick={onRetry} className="flex-shrink-0 text-xs font-medium text-emerald-600 hover:underline">
+        Retry
+      </button>
+    </div>
+  )
 }
 
-function guessRecommendationIcon(text: string): string {
-  const lower = text.toLowerCase();
-  if (lower.includes("fertilizer") || lower.includes("basal")) return " ";
-  if (lower.includes("irrigat") || lower.includes("water") || lower.includes("rainfall")) return " ";
-  if (lower.includes("harvest")) return " ";
-  if (lower.includes("fungicide") || lower.includes("pest") || lower.includes("spray")) return " ";
-  return " ";
-}
-
-/** Build AQI crop alerts from OWM Air Pollution API response */
-function buildAQIAlerts(aqiData: any): { icon: string; title: string; desc: string; severity: "high" | "medium" | "low" }[] {
-  if (!aqiData?.list?.[0]) return [];
-  const { main, components } = aqiData.list[0];
-  const aqi: number = main?.aqi ?? 0; // 1=Good … 5=Very Poor
-  const pm25: number = components?.pm2_5 ?? 0;
-  const o3: number   = components?.o3    ?? 0;
-  const no2: number  = components?.no2   ?? 0;
-  const alerts = [];
-
-  if (aqi >= 4) {
-    alerts.push({
-      icon: "🏭",
-      title: "Very Poor Air Quality",
-      desc: `AQI ${aqi}/5 — avoid burning crop residue. Poor air stresses plant stomata and reduces yield.`,
-      severity: "high" as const,
-    });
-  } else if (aqi === 3) {
-    alerts.push({
-      icon: " ",
-      title: "Moderate Air Quality",
-      desc: `AQI ${aqi}/5 — limit smoke from field burning. Sensitive crops like leafy vegetables may show stress.`,
-      severity: "medium" as const,
-    });
-  }
-
-  if (pm25 > 35) {
-    alerts.push({
-      icon: " ",
-      title: "High PM2.5 Particles",
-      desc: `PM2.5 at ${pm25.toFixed(1)} µg/m³ — dust particles may clog leaf pores. Rinse foliage if possible.`,
-      severity: pm25 > 55 ? "high" as const : "medium" as const,
-    });
-  }
-
-  if (o3 > 100) {
-    alerts.push({
-      icon: " ",
-      title: "Ozone Alert",
-      desc: `O₃ at ${o3.toFixed(0)} µg/m³ — elevated ozone can cause leaf bleaching in paddy and tomato.`,
-      severity: "medium" as const,
-    });
-  }
-
-  if (no2 > 100) {
-    alerts.push({
-      icon: " ",
-      title: "NO₂ Elevated",
-      desc: `NO₂ at ${no2.toFixed(0)} µg/m³ — possible industrial influence. Avoid harvesting leafy crops today.`,
-      severity: "medium" as const,
-    });
-  }
-
-  return alerts;
-}
-
-/** Build UV alert from OWM One Call / hourly uvi field */
-function buildUVAlert(uvi: number): { icon: string; title: string; desc: string; severity: "high" | "medium" | "low" } | null {
-  if (uvi >= 11) return { icon: " ", title: "Extreme UV Index", desc: `UV Index ${uvi} — cover nursery seedlings with shade net. No field work 9am–4pm.`, severity: "high" };
-  if (uvi >= 8)  return { icon: " ", title: "Very High UV", desc: `UV Index ${uvi} — risk of leaf scorch on tender crops. Avoid field work 10am–3pm.`, severity: "high" };
-  if (uvi >= 6)  return { icon: " ", title: "High UV Index", desc: `UV Index ${uvi} — young seedlings may need shade. Wear protective clothing during field work.`, severity: "medium" };
-  return null;
-}
-
-/** Build hourly irrigation schedule from OWM hourly forecast */
-function buildIrrigationSchedule(hourlyData: any[]): IrrigationSlot[] {
-  if (!hourlyData?.length) return [];
-
-  // Pick morning (6am), midday (12pm), evening (5pm) slots
-  const targetHours = [6, 12, 17];
-  const slots: IrrigationSlot[] = [];
-
-  for (const targetHour of targetHours) {
-    const match = hourlyData.find((h: any) => {
-      const hour = new Date(h.dt * 1000).getHours();
-      return hour === targetHour;
-    }) ?? hourlyData[0];
-
-    if (!match) continue;
-
-    const hour       = new Date(match.dt * 1000).getHours();
-    const timeLabel  = `${String(hour).padStart(2, "0")}:00`;
-    const rainChance = Math.round((match.pop ?? 0) * 100);
-    const temp       = Math.round(match.temp ?? 30);
-    const rain1h     = match.rain?.["1h"] ?? 0;
-
-    let action: IrrigationSlot["action"] = "irrigate";
-    let reason = "";
-
-    if (rainChance >= 70 || rain1h > 3) {
-      action = "skip";
-      reason = `Rain expected (${rainChance}%) — natural watering sufficient`;
-    } else if (hour >= 11 && hour <= 14 && temp > 35) {
-      action = "skip";
-      reason = `Peak heat at ${temp}°C — water evaporates too fast`;
-    } else if (rainChance >= 40) {
-      action = "optional";
-      reason = `${rainChance}% rain chance — monitor and water only if dry`;
-    } else if (temp > 33) {
-      action = "irrigate";
-      reason = `Hot & dry (${temp}°C) — irrigate to prevent wilting`;
-    } else {
-      action = "irrigate";
-      reason = `Good conditions — ${temp}°C, low rain risk`;
-    }
-
-    slots.push({ time: timeLabel, action, reason, rainChance, temp });
-  }
-
-  return slots;
-}
-
-// ── Style maps ───────────────────────────────────────────────────────────────
-
-const severityColor  = { high: "border-red-400 bg-red-50",    medium: "border-yellow-400 bg-yellow-50", low: "border-green-400 bg-green-50" };
-const severityBadge  = { high: "bg-red-100 text-red-700",     medium: "bg-yellow-100 text-yellow-700",  low: "bg-green-100 text-green-700" };
-const actionColor    = { irrigate: "bg-blue-50 border-blue-300", skip: "bg-gray-50 border-gray-200", optional: "bg-amber-50 border-amber-300" };
-const actionBadge    = { irrigate: "bg-blue-100 text-blue-700", skip: "bg-gray-100 text-gray-500",   optional: "bg-amber-100 text-amber-700" };
-const actionIcon     = { irrigate: " ", skip: " ", optional: " " };
-const actionLabel    = { irrigate: "Irrigate", skip: "Skip", optional: "Optional" };
-
-// ── AQI label helper ─────────────────────────────────────────────────────────
-const AQI_LABELS = ["", "Good", "Fair", "Moderate", "Poor", "Very Poor"];
-const AQI_COLORS = ["", "text-green-600", "text-lime-600", "text-yellow-600", "text-orange-600", "text-red-600"];
-
-// ── Component ────────────────────────────────────────────────────────────────
-
+// ─── Main Page ────────────────────────────────────────────────────────────────
 export default function DashboardPage() {
-  const { user } = useAuth();
-  const [selectedCrop, setSelectedCrop] = useState("paddy");
-  const [time] = useState(new Date());
+  const { user }                                          = useAuth()
+  const { location, loading: locLoading, error: locErr,
+          permissionDenied, refresh: retryLocation }      = useLocation()
 
-  // Core dashboard data
-  const [dashboard, setDashboard]           = useState<any>(null);
-  const [loading, setLoading]               = useState(true);
+  const [weather,   setWeather]   = useState<WeatherData | null>(null)
+  const [alerts,    setAlerts]    = useState<Alert[]>([])
+  const [recs,      setRecs]      = useState<Rec[]>([])
+  const [hourly,    setHourly]    = useState<HourlyItem[]>([])
+  const [aqi,       setAqi]       = useState<AQIData | null>(null)
+  const [loading,   setLoading]   = useState(false)
+  const [apiError,  setApiError]  = useState('')
+  const [crop,      setCrop]      = useState('paddy')
 
-  // New feature data
-  const [aqiData, setAqiData]               = useState<any>(null);
-  const [hourlyData, setHourlyData]         = useState<any>(null);
-  const [aqiLoading, setAqiLoading]         = useState(true);
-  const [hourlyLoading, setHourlyLoading]   = useState(true);
-
+  // Fetch all dashboard data once location is ready
   useEffect(() => {
-    // Existing dashboard fetch
-    const fetchDashboard = async () => {
-      try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/dashboard`);
-        const data = await res.json();
-        setDashboard(data);
-      } catch (err) {
-        console.error("Failed to fetch dashboard:", err);
-      } finally {
-        setLoading(false);
+    if (!location) return
+    fetchAll(location.lat, location.lon)
+  }, [location])
+
+  const fetchAll = async (lat: number, lon: number) => {
+    setLoading(true)
+    setApiError('')
+    try {
+      const [dash, aqiData, forecastData] = await Promise.allSettled([
+        getDashboard(lat, lon),
+        getAQI(lat, lon),
+        getHourlyForecast(lat, lon),
+      ])
+
+      if (dash.status === 'fulfilled') {
+        setWeather(dash.value.weather)
+        setAlerts(dash.value.alerts  || [])
+        setRecs(dash.value.recommendations || [])
+      } else {
+        setApiError('Weather data unavailable. Check your backend connection.')
       }
-    };
 
-    // New: AQI fetch
-    const fetchAQI = async () => {
-      try {
-        const data = await getAQI();
-        setAqiData(data);
-      } catch (err) {
-        console.error("Failed to fetch AQI:", err);
-      } finally {
-        setAqiLoading(false);
-      }
-    };
+      if (aqiData.status === 'fulfilled')    setAqi(aqiData.value)
+      if (forecastData.status === 'fulfilled') setHourly(forecastData.value?.hourly || forecastData.value || [])
 
-    // New: Hourly forecast fetch (UV + irrigation)
-    const fetchHourly = async () => {
-      try {
-        const data = await getHourlyForecast();
-        setHourlyData(data);
-      } catch (err) {
-        console.error("Failed to fetch hourly forecast:", err);
-      } finally {
-        setHourlyLoading(false);
-      }
-    };
+    } catch {
+      setApiError('Failed to load dashboard. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
-    fetchDashboard();
-    fetchAQI();
-    fetchHourly();
-  }, []);
+  const time      = new Date()
+  const greeting  = time.getHours() < 12 ? 'Good Morning' : time.getHours() < 17 ? 'Good Afternoon' : 'Good Evening'
+  const temp      = weather ? Math.round(weather.main.temp) : '—'
+  const humidity  = weather ? weather.main.humidity : '—'
+  const condition = weather ? weather.weather[0].description : 'Loading...'
+  const windSpeed = weather ? Math.round(weather.wind.speed * 3.6) : '—'
+  const rainfall  = weather ? (weather.rain?.['1h'] ?? weather.rain?.['3h'] ?? 0) : 0
 
-  // ── Derive weather values ──────────────────────────────────────────────────
-  const weatherMain      = dashboard?.weather?.main;
-  const weatherCondition = dashboard?.weather?.weather?.[0];
-  const weatherWind      = dashboard?.weather?.wind;
-
-  const temp         = weatherMain?.temp     != null ? Math.round(weatherMain.temp) : "—";
-  const humidity     = weatherMain?.humidity != null ? `${weatherMain.humidity}%`   : "—";
-  const windSpeed    = weatherWind?.speed    != null ? `${Math.round(weatherWind.speed * 3.6)}km/h` : "—";
-  const conditionLabel = weatherCondition?.main
-    ? weatherCondition.main.replace(/([A-Z])/g, " $1").trim()
-    : "—";
-
-  const rainfallRaw = dashboard?.weather?.rain;
-  const rainfall    = rainfallRaw ? `${rainfallRaw["1h"] ?? rainfallRaw["3h"] ?? 0}mm` : "0mm";
-
-  // ── Derived: alerts & recommendations ─────────────────────────────────────
-  const apiAlerts: any[]            = dashboard?.alerts          ?? [];
-  const apiRecommendations: any[]   = dashboard?.recommendations ?? [];
-  const hasApiAlerts                = apiAlerts.length > 0;
-
-  // AQI-derived alerts
-  const aqiAlerts = buildAQIAlerts(aqiData);
-  const aqiValue: number | null     = aqiData?.list?.[0]?.main?.aqi ?? null;
-
-  // UV-derived alert
-  const currentUVI: number          = hourlyData?.current?.uvi ?? hourlyData?.hourly?.[0]?.uvi ?? 0;
-  const uvAlert                     = buildUVAlert(currentUVI);
-
-  // Irrigation schedule
-  const irrigationSlots: IrrigationSlot[] = buildIrrigationSchedule(hourlyData?.hourly ?? []);
-
-  // Merge all alert sources: API > UV > AQI > static
-  const allAlerts = [
-    ...apiAlerts,
-    ...(uvAlert ? [uvAlert] : []),
-    ...aqiAlerts,
-  ];
-  const hasAnyAlerts = allAlerts.length > 0;
-
-  const greeting =
-    time.getHours() < 12 ? "Good Morning"
-    : time.getHours() < 17 ? "Good Afternoon"
-    : "Good Evening";
+  const isLoading = locLoading || loading
 
   return (
-    <div className="space-y-6 page-container">
+    <div className="pt-24 pb-20 space-y-5 page-container">
 
-      {/* ── Welcome Header ─────────────────────────────────────────────────── */}
-      <div className="p-6 text-white bg-gradient-to-r from-forest-700 to-forest-500 rounded-2xl">
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="text-sm text-forest-200">{greeting}</p>
-            <h1 className="mt-1 text-2xl font-bold">{user?.name || "Farmer"}</h1>
-            <p className="mt-1 text-sm text-forest-200" style={{ fontFamily: "Noto Sans Malayalam, sans-serif" }}>
-              ഇന്നത്തെ കൃഷി വിവരങ്ങൾ
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="text-3xl font-bold">{loading ? "…" : `${temp}°C`}</p>
-            <p className="text-sm text-forest-200">{loading ? "Loading…" : conditionLabel}</p>
-            <p className="text-xs text-forest-200">Kerala</p>
-          </div>
-        </div>
+      {/* Location permission error */}
+      <LocationBanner denied={permissionDenied} error={locErr} onRetry={retryLocation} />
 
-        {/* Mini forecast strip */}
-        <div className="flex gap-3 pb-1 mt-5 overflow-x-auto">
-          {STATIC_FORECAST.map((f) => (
-            <div key={f.day} className="flex-shrink-0 bg-white/15 rounded-xl px-3 py-2 text-center min-w-[64px]">
-              <p className="text-xs text-forest-200">{f.day}</p>
-              <p className="my-1 text-xl">
-                {f.day === "Today" && weatherCondition?.main ? conditionIcon(weatherCondition.main) : f.icon}
-              </p>
-              <p className="text-xs font-bold">
-                {f.day === "Today" && temp !== "—" ? `${temp}°` : `${f.high}°`}
-              </p>
-              <p className="text-xs text-forest-300">  {f.rain}</p>
+      {/* ── Hero Weather Card ── */}
+      <div className="bg-gradient-to-br from-emerald-700 via-emerald-600 to-emerald-500 text-white rounded-[2.5rem] p-8 shadow-xl relative overflow-hidden">
+        {/* Decorative background circle */}
+        <div className="absolute w-64 h-64 rounded-full -top-24 -right-24 bg-white/10 blur-3xl" />
+        
+        <div className="relative z-10">
+          <div className="flex items-start justify-between mb-8">
+            <div>
+              <p className="mb-1 text-sm font-bold tracking-widest uppercase text-emerald-100">{greeting} 👋</p>
+              <h1 className="text-3xl font-black">{String(user?.name || 'Farmer')}</h1>
+              {/* Location label */}
+              <div className="flex items-center gap-2 px-4 py-2 mt-3 rounded-full bg-white/10 backdrop-blur-md w-fit">
+                <span className="text-lg">📍</span>
+                {isLoading ? (
+                  <span className="text-sm font-bold text-emerald-100 animate-pulse">Detecting location…</span>
+                ) : (
+                  <div className="flex items-center">
+                    <span className="text-sm font-black text-white">
+                      {location?.source === 'gps' ? location.label : weather?.name || location?.label}
+                    </span>
+                    {location?.source === 'fallback' && (
+                      <span className="text-emerald-200 text-[10px] ml-2 font-black uppercase">(default)</span>
+                    )}
+                  </div>
+                )}
+                <button onClick={retryLocation} title="Refresh location"
+                  className="ml-2 transition-colors text-emerald-200 hover:text-white">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+                </button>
+              </div>
             </div>
-          ))}
+
+            {/* Current temp */}
+            <div className="text-right">
+              {isLoading ? (
+                <div className="w-12 h-12 ml-auto border-4 rounded-full border-white/30 border-t-white animate-spin" />
+              ) : (
+                <>
+                  <p className="text-6xl font-black leading-none tracking-tighter">{temp}°</p>
+                  <p className="mt-2 text-sm font-black tracking-wide capitalize text-emerald-100">{condition}</p>
+                  <p className="text-emerald-200 text-[10px] font-black uppercase mt-1">Feels {weather ? Math.round(weather.main.feels_like) : '—'}°</p>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Stats row */}
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            {[
+              { icon: '💧', label: 'Humidity',  value: `${humidity}%` },
+              { icon: '🌧️', label: 'Rain',      value: `${rainfall}mm` },
+              { icon: '💨', label: 'Wind',      value: `${windSpeed}km/h ${weather ? windDir(weather.wind.deg) : ''}` },
+              { icon: '☁️', label: 'Clouds',    value: `${weather ? weather.clouds.all : '—'}%` },
+            ].map(s => (
+              <div key={s.label} className="p-4 text-center border bg-white/10 backdrop-blur-md rounded-2xl border-white/10">
+                <p className="mb-1 text-2xl">{s.icon}</p>
+                <p className="text-sm font-black text-white">{isLoading ? '…' : s.value}</p>
+                <p className="text-emerald-200 text-[9px] font-black uppercase tracking-widest mt-1">{s.label}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* ── Quick Stats ────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-3 gap-3">
-        {[
-          { label: "Humidity", value: loading ? "…" : humidity },
-          { label: "Rainfall", value: loading ? "…" : rainfall },
-          { label: "Wind",     value: loading ? "…" : windSpeed },
-        ].map((s) => (
-          <div key={s.label} className="p-3 text-center card">
-            <p className="text-sm font-bold text-forest-800">{s.value}</p>
-            <p className="text-xs text-gray-500">{s.label}</p>
-          </div>
-        ))}
-      </div>
+      {/* API error */}
+      {apiError && (
+        <div className="flex items-center gap-3 p-4 text-sm font-bold text-red-700 border border-red-100 bg-red-50 rounded-2xl">
+          <span className="text-xl">⚠️</span> {apiError}
+        </div>
+      )}
 
-      {/* ── NEW: UV Index + Air Quality Summary Bar ────────────────────────── */}
-      {(!aqiLoading || !hourlyLoading) && (
-        <div className="grid grid-cols-2 gap-3">
-          {/* UV Index card */}
-          <div className="p-3 text-center card">
-            {hourlyLoading ? (
-              <p className="text-sm text-gray-400">Loading UV…</p>
-            ) : (
-              <>
-                <p className="mb-1 text-2xl">
-                  {currentUVI >= 8 ? "🔥" : currentUVI >= 6 ? "☀️" : currentUVI >= 3 ? "🌤️" : "😌"}
-                </p>
-                <p className="text-sm font-bold text-forest-800">UV {currentUVI.toFixed(1)}</p>
-                <p className="text-xs text-gray-500">
-                  {currentUVI >= 11 ? "Extreme" : currentUVI >= 8 ? "Very High" : currentUVI >= 6 ? "High" : currentUVI >= 3 ? "Moderate" : "Low"}
-                </p>
-              </>
-            )}
+      {/* ── AQI ── */}
+      {aqi && (
+        <div className={`rounded-3xl flex items-center gap-6 p-6 border transition-all ${aqiColor(aqi.aqi)}`}>
+          <div className="flex flex-col items-center justify-center w-20 h-20 text-center shadow-sm bg-white/50 backdrop-blur-sm rounded-2xl">
+            <p className="text-3xl font-black leading-none">{aqi.aqi}</p>
+            <p className="text-[10px] font-black uppercase tracking-widest mt-1">AQI</p>
           </div>
+          <div className="flex-1">
+            <p className="text-lg font-black">{aqi.label}</p>
+            <p className="text-xs font-medium opacity-70">Air quality in your current farming zone</p>
+          </div>
+          <span className="text-4xl">🌬️</span>
+        </div>
+      )}
 
-          {/* AQI card */}
-          <div className="p-3 text-center card">
-            {aqiLoading ? (
-              <p className="text-sm text-gray-400">Loading AQI…</p>
-            ) : aqiValue ? (
-              <>
-                <p className="mb-1 text-2xl">
-                  {aqiValue <= 2 ? " " : aqiValue === 3 ? " " : " "}
-                </p>
-                <p className={`text-sm font-bold ${AQI_COLORS[aqiValue] || "text-gray-700"}`}>
-                  AQI: {AQI_LABELS[aqiValue] ?? "—"}
-                </p>
-                <p className="text-xs text-gray-500">Air Quality</p>
-              </>
-            ) : (
-              <p className="text-sm text-gray-400">No AQI data</p>
-            )}
+      {/* ── Hourly Forecast ── */}
+      {hourly.length > 0 && (
+        <div className="pt-4">
+          <h2 className="px-2 mb-4 text-lg font-black text-slate-900">🕐 Hourly Forecast</h2>
+          <div className="flex gap-4 px-2 pb-6 overflow-x-auto scrollbar-hide">
+            {hourly.slice(0, 12).map((h, i) => (
+              <div key={i} className="flex-shrink-0 bg-white border border-slate-100 rounded-2xl text-center px-5 py-6 min-w-[100px] shadow-sm hover:shadow-md transition-shadow">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">{h.time}</p>
+                <p className="my-3 text-3xl">{h.icon}</p>
+                <p className="text-lg font-black text-slate-900">{Math.round(h.temp)}°</p>
+                {h.rain > 0 && (
+                  <div className="flex items-center justify-center gap-1 mt-2">
+                    <span className="text-[10px] text-blue-500 font-black tracking-tighter">🌧 {h.rain}mm</span>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       )}
 
-      {/* ── Crop Alerts (merged: API + UV + AQI + static) ─────────────────── */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-bold text-forest-800">🌾 Crop Alerts</h2>
-          {!hasAnyAlerts && (
-            <div className="flex gap-2 overflow-x-auto">
-              {Object.keys(CROP_ALERTS).map((c) => (
-                <button
-                  key={c}
-                  onClick={() => setSelectedCrop(c)}
-                  className={`px-3 py-1 rounded-lg text-xs font-medium capitalize transition-colors flex-shrink-0 ${
-                    selectedCrop === c ? "bg-forest-600 text-white" : "bg-forest-100 text-forest-700"
-                  }`}
-                >
+      {/* ── Crop Alerts ── */}
+      {alerts.length > 0 && (
+        <div className="pt-4">
+          <div className="flex flex-col justify-between gap-4 px-2 mb-6 sm:flex-row sm:items-center">
+            <h2 className="text-lg font-black text-slate-900">🚨 Smart Crop Alerts</h2>
+            {/* Crop filter */}
+            <div className="flex gap-2 bg-slate-100 p-1.5 rounded-2xl w-fit">
+              {['paddy','coconut','banana','vegetable'].map(c => (
+                <button key={c} onClick={() => setCrop(c)}
+                  className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                    crop === c ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
                   {c}
                 </button>
               ))}
             </div>
-          )}
-        </div>
+          </div>
 
-        {loading && aqiLoading && hourlyLoading ? (
-          <p className="py-4 text-sm text-center text-gray-400">Loading alerts…</p>
-        ) : hasAnyAlerts ? (
-          <div className="space-y-3">
-            {allAlerts.map((a: any, i: number) => {
-              const sev = guessSeverity(a);
-              return (
-                <div key={i} className={`border-l-4 rounded-xl p-4 ${severityColor[sev]}`}>
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-start gap-2">
-                      <span className="text-xl">{a.icon ?? "⚠️"}</span>
+          <div className="px-2 space-y-3">
+            {alerts
+              .filter(a => !a.title || a.title.toLowerCase().includes(crop) || true)
+              .map((a, i) => (
+                <div key={i} className={`border rounded-3xl p-6 transition-all hover:shadow-md ${severityBorder[a.severity]}`}>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex gap-4">
+                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-sm ${severityBadge[a.severity]}`}>
+                        {a.icon}
+                      </div>
                       <div>
-                        <p className="text-sm font-bold text-gray-800">{a.title}</p>
-                        <p className="mt-1 text-sm text-gray-600">{a.desc || a.description}</p>
+                        <p className="text-base font-black text-slate-900">{a.title}</p>
+                        <p className="mt-1 text-sm font-medium leading-relaxed text-slate-500">{a.desc}</p>
                       </div>
                     </div>
-                    <span className={`badge text-xs flex-shrink-0 capitalize ${severityBadge[sev]}`}>
-                      {sev}
+                    <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest flex-shrink-0 ${severityBadge[a.severity]}`}>
+                      {a.severity}
                     </span>
                   </div>
                 </div>
-              );
-            })}
+              ))}
           </div>
-        ) : (
-          // Static fallback by crop
-          <div className="space-y-3">
-            {(CROP_ALERTS[selectedCrop] || []).map((a, i) => (
-              <div key={i} className={`border-l-4 rounded-xl p-4 ${severityColor[a.severity]}`}>
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-start gap-2">
-                    <span className="text-xl">{a.icon}</span>
-                    <div>
-                      <p className="text-sm font-bold text-gray-800">{a.title}</p>
-                      <p className="mt-1 text-sm text-gray-600">{a.desc}</p>
-                    </div>
-                  </div>
-                  <span className={`badge text-xs flex-shrink-0 capitalize ${severityBadge[a.severity]}`}>
-                    {a.severity}
-                  </span>
+        </div>
+      )}
+
+      {/* ── Recommendations ── */}
+      {recs.length > 0 && (
+        <div className="pt-4">
+          <h2 className="px-2 mb-4 text-lg font-black text-slate-900">✅ Expert Recommendations</h2>
+          <div className="px-2 space-y-3">
+            {recs.map((r, i) => (
+              <div key={i} className="flex items-start gap-5 p-6 transition-all bg-white border border-slate-100 rounded-3xl hover:shadow-md">
+                <div className="flex items-center justify-center text-3xl w-14 h-14 bg-emerald-50 rounded-2xl shrink-0">
+                  {r.icon}
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* ── NEW: Hourly Irrigation Scheduler ──────────────────────────────── */}
-      <div>
-        <h2 className="mb-3 text-lg font-bold text-forest-800">💧 Today's Irrigation Schedule</h2>
-        {hourlyLoading ? (
-          <p className="py-4 text-sm text-center text-gray-400">Building schedule…</p>
-        ) : irrigationSlots.length > 0 ? (
-          <div className="space-y-2">
-            {irrigationSlots.map((slot, i) => (
-              <div key={i} className={`border rounded-xl p-4 flex items-center gap-4 ${actionColor[slot.action]}`}>
-                {/* Time */}
-                <div className="text-center min-w-[52px]">
-                  <p className="text-base font-bold text-gray-800">{slot.time}</p>
-                  <p className="text-xs text-gray-400">{slot.temp}°C</p>
-                </div>
-
-                {/* Divider */}
-                <div className="w-px h-10 bg-gray-200" />
-
-                {/* Action icon + reason */}
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <span className="text-lg">{actionIcon[slot.action]}</span>
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${actionBadge[slot.action]}`}>
-                      {actionLabel[slot.action]}
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-3 py-1 rounded-full">
+                      {r.tag}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-500">{slot.reason}</p>
-                </div>
-
-                {/* Rain chance */}
-                <div className="text-center min-w-[40px]">
-                  <p className="text-sm font-bold text-blue-500">{slot.rainChance}%</p>
-                  <p className="text-xs text-gray-400">rain</p>
+                  <p className="text-sm font-bold leading-relaxed text-slate-700">{r.text}</p>
                 </div>
               </div>
             ))}
           </div>
-        ) : (
-          /* Fallback: simple rule-based schedule when no hourly API data */
-          <div className="space-y-2">
-            {[
-              { time: "06:00", note: "Best window — cool temperature, low evaporation" },
-              { time: "17:00", note: "Evening window — avoid waterlogging overnight" },
-            ].map((s, i) => (
-              <div key={i} className={`border rounded-xl p-4 flex items-center gap-4 ${actionColor["irrigate"]}`}>
-                <div className="text-center min-w-[52px]">
-                  <p className="text-base font-bold text-gray-800">{s.time}</p>
-                </div>
-                <div className="w-px h-8 bg-gray-200" />
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <span className="text-lg">💧</span>
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${actionBadge["irrigate"]}`}>
-                      Irrigate
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-500">{s.note}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* ── Today's Recommendations ────────────────────────────────────────── */}
-      <div>
-        <h2 className="mb-3 text-lg font-bold text-forest-800">📋 Today's Recommendations</h2>
-        {loading ? (
-          <p className="py-4 text-sm text-center text-gray-400">Loading recommendations…</p>
-        ) : apiRecommendations.length > 0 ? (
-          <div className="space-y-2">
-            {apiRecommendations.map((r: any, i: number) => {
-              const text = r.text || r.message || r.description || JSON.stringify(r);
-              const tag  = r.tag  || guessTag(text);
-              const icon = r.icon || guessRecommendationIcon(text);
-              return (
-                <div key={i} className="flex items-start gap-3 p-4 card">
-                  <span className="flex-shrink-0 text-2xl">{icon}</span>
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-700">{text}</p>
-                  </div>
-                  <span className="flex-shrink-0 text-xs badge bg-forest-100 text-forest-700">{tag}</span>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <p className="py-4 text-sm text-center text-gray-400">No recommendations available right now.</p>
-        )}
-      </div>
+      {/* Loading skeleton */}
+      {isLoading && (
+        <div className="px-2 space-y-4">
+          {[1,2,3].map(i => (
+            <div key={i} className="h-24 bg-slate-50 rounded-3xl animate-pulse" />
+          ))}
+        </div>
+      )}
 
-      {/* ── Quick Actions ──────────────────────────────────────────────────── */}
-      <div>
-        <h2 className="mb-3 text-lg font-bold text-forest-800">⚡ Quick Actions</h2>
-        <div className="grid grid-cols-2 gap-3">
+      {/* ── Quick Actions ── */}
+      <div className="pt-8">
+        <h2 className="px-2 mb-6 text-lg font-black text-slate-900">⚡ Quick Actions</h2>
+        <div className="grid grid-cols-2 gap-4 px-2">
           {[
-            { to: "/voice",   label: "Ask AI",           sub: "Voice assistant" },
-            { to: "/scan",    label: "Scan Crop",         sub: "Disease detection" },
-            { to: "/tracker", label: "Resource Tracker",  sub: "Costs & subsidies" },
-            { to: "/offline", label: "Offline Guides",    sub: "Download advice" },
-          ].map((a) => (
-            <Link
-              key={a.to}
-              to={a.to}
-              className="p-4 transition-all card hover:shadow-lg hover:-translate-y-1"
-            >
-              <p className="text-sm font-bold text-forest-700">{a.label}</p>
-              <p className="text-xs text-gray-400">{a.sub}</p>
+            { to: '/voice',   icon: '🎤', label: 'Ask AI',           sub: 'Voice assistant', color: 'bg-emerald-50 text-emerald-700' },
+            { to: '/scan',    icon: '📷', label: 'Scan Crop',         sub: 'Disease detection', color: 'bg-blue-50 text-blue-700' },
+            { to: '/tracker', icon: '📊', label: 'Resource Tracker',  sub: 'Costs & subsidies', color: 'bg-amber-50 text-amber-700' },
+            { to: '/offline', icon: '📥', label: 'Offline Guides',    sub: 'Download advice', color: 'bg-purple-50 text-purple-700' },
+          ].map(a => (
+            <Link key={a.to} to={a.to}
+              className="bg-white border border-slate-100 rounded-[2rem] hover:shadow-xl transition-all hover:-translate-y-1 p-6 group">
+              <div className={`w-14 h-14 ${a.color} rounded-2xl flex items-center justify-center text-3xl mb-4 group-hover:scale-110 transition-transform`}>
+                {a.icon}
+              </div>
+              <p className="mb-1 text-sm font-black text-slate-900">{a.label}</p>
+              <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">{a.sub}</p>
             </Link>
           ))}
         </div>
       </div>
 
     </div>
-  );
+  )
 }

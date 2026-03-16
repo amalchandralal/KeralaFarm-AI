@@ -13,8 +13,8 @@ router.post("/bookings", createBooking);
 router.get("/bookings", getBookings);
 
 router.get("/dashboard", getDashboard);
-router.get("/dashboard/aqi", getAQI);
-router.get("/dashboard/hourly", getHourlyForecast)
+router.get("/aqi",              getAQI)
+router.get("/forecast/hourly",  getHourlyForecast)
 
 router.get("/market-prices", getMarketPrices);
 

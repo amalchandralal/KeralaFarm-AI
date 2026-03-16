@@ -53,16 +53,22 @@ export const getBookings = async () => {
   return res.data
 }
 
-// ── NEW: Weather Enhancement Services ──────────────────────────────────────
-
-/** Air Quality Index data from /dashboard/aqi */
-export const getAQI = async () => {
-  const res = await api.get('/dashboard/aqi')
+// Dashboard / Weather Services
+export const getDashboard = async (lat?: number, lon?: number) => {
+  const params = lat && lon ? `?lat=${lat}&lon=${lon}` : ''
+  const res = await api.get(`/dashboard${params}`)
   return res.data
 }
 
-/** UV Index + hourly irrigation schedule from /dashboard/hourly */
-export const getHourlyForecast = async () => {
-  const res = await api.get('/dashboard/hourly')
+export const getAQI = async (lat?: number, lon?: number) => {
+  const params = lat && lon ? `?lat=${lat}&lon=${lon}` : ''
+  const res = await api.get(`/aqi${params}`)
   return res.data
 }
+
+export const getHourlyForecast = async (lat?: number, lon?: number) => {
+  const params = lat && lon ? `?lat=${lat}&lon=${lon}` : ''
+  const res = await api.get(`/forecast/hourly${params}`)
+  return res.data
+}
+

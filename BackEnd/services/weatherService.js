@@ -1,28 +1,26 @@
 const axios = require("axios");
 
 const OWM_KEY = process.env.WEATHER_KEY;
-const LAT = process.env.LAT || 10.85;
-const LON = process.env.LON || 76.27;
 
-// ── Existing alert/recommendation logic ──────────────────────────────────────
+// ── Alert & Recommendation builders ──────────────────────────────────────────
 
 const buildAlerts = ({ temp, humidity, windSpeed, rainfall, condition, clouds }) => {
   const alerts = [];
 
   if (humidity > 80)
-    alerts.push({ title: "Stem Borer Alert", desc: "High humidity increases stem borer risk in paddy. Apply Chlorpyrifos 2.5ml/L if observed.", severity: "high" });
+    alerts.push({ icon: "🦟", title: "Stem Borer Alert", desc: "High humidity increases stem borer risk in paddy. Apply Chlorpyrifos 2.5ml/L if observed.", severity: "high" });
   if (humidity > 75 && clouds > 60)
-    alerts.push({ title: "Blast Disease Risk", desc: "Cloudy and humid — ideal for rice blast. Use Tricyclazole spray preventively.", severity: "medium" });
+    alerts.push({ icon: "🍂", title: "Blast Disease Risk", desc: "Cloudy and humid — ideal for rice blast. Use Tricyclazole spray preventively.", severity: "medium" });
   if (condition === "Rain" || condition === "Thunderstorm" || rainfall > 10)
-    alerts.push({ title: "Waterlogging Warning", desc: "Heavy rainfall detected. Ensure drainage channels are clear to prevent root rot.", severity: "high" });
+    alerts.push({ icon: "💧", title: "Waterlogging Warning", desc: "Heavy rainfall detected. Ensure drainage channels are clear to prevent root rot.", severity: "high" });
   if (temp > 35)
-    alerts.push({ title: "Heat Stress Alert", desc: `Temperature at ${Math.round(temp)}°C. Avoid field work 11am–3pm. Increase irrigation frequency.`, severity: "high" });
+    alerts.push({ icon: "🌡️", title: "Heat Stress Alert", desc: `Temperature at ${Math.round(temp)}°C. Avoid field work 11am–3pm. Increase irrigation frequency.`, severity: "high" });
   if (windSpeed > 25)
-    alerts.push({ title: "High Wind Warning", desc: `Wind at ${Math.round(windSpeed)} km/h. Avoid spraying — drift risk.`, severity: "medium" });
+    alerts.push({ icon: "💨", title: "High Wind Warning", desc: `Wind at ${Math.round(windSpeed)} km/h. Avoid spraying — drift risk.`, severity: "medium" });
   if (temp > 32 && humidity < 50 && condition === "Clear")
-    alerts.push({ title: "Rhinoceros Beetle Risk", desc: "Dry and hot — check coconut crown for beetle damage.", severity: "medium" });
+    alerts.push({ icon: "🐛", title: "Rhinoceros Beetle Risk", desc: "Dry and hot — check coconut crown for beetle damage.", severity: "medium" });
   if (humidity > 80 && temp > 25 && (condition === "Rain" || condition === "Drizzle"))
-    alerts.push({ title: "Fungal Risk High", desc: "Wet and warm — apply copper fungicide to tomato and brinjal.", severity: "high" });
+    alerts.push({ icon: "🌿", title: "Fungal Risk High", desc: "Wet and warm — apply copper fungicide to tomato and brinjal.", severity: "high" });
 
   return alerts;
 };
@@ -31,72 +29,80 @@ const buildRecommendations = ({ temp, humidity, windSpeed, rainfall, condition, 
   const recommendations = [];
 
   if (condition === "Clouds" || clouds > 50)
-    recommendations.push({ text: "Good time to apply basal fertilizer to paddy before rain.", tag: "Fertilizer" });
+    recommendations.push({ icon: "🌱", text: "Good time to apply basal fertilizer to paddy before rain.", tag: "Fertilizer" });
   if (condition === "Rain" || condition === "Drizzle" || rainfall > 5)
-    recommendations.push({ text: `Skip irrigation today — natural rainfall of ${rainfall > 0 ? rainfall + "mm" : "rain"} expected.`, tag: "Water" });
+    recommendations.push({ icon: "🚿", text: `Skip irrigation today — natural rainfall of ${rainfall > 0 ? rainfall + "mm" : "rain"} expected.`, tag: "Water" });
   else if (temp > 35 && humidity < 40)
-    recommendations.push({ text: "Hot and dry — increase irrigation frequency to prevent crop wilting.", tag: "Water" });
+    recommendations.push({ icon: "🚿", text: "Hot and dry — increase irrigation frequency to prevent crop wilting.", tag: "Water" });
   if (rainfall > 15 || condition === "Thunderstorm")
-    recommendations.push({ text: "Heavy rainfall detected. Harvest ripe vegetables now to avoid damage.", tag: "Harvest" });
+    recommendations.push({ icon: "📦", text: "Heavy rainfall detected. Harvest ripe vegetables now to avoid damage.", tag: "Harvest" });
   if (humidity > 70 && (condition === "Clouds" || condition === "Drizzle"))
-    recommendations.push({ text: "Apply fungicide spray before forecast rainfall.", tag: "Pest Control" });
+    recommendations.push({ icon: "🌿", text: "Apply fungicide spray before forecast rainfall.", tag: "Pest Control" });
   if (condition === "Clear" && windSpeed < 15)
-    recommendations.push({ text: "Clear skies and calm wind — ideal conditions for pesticide or fertilizer spraying.", tag: "Pest Control" });
+    recommendations.push({ icon: "☀️", text: "Clear skies and calm wind — ideal conditions for pesticide or fertilizer spraying.", tag: "Pest Control" });
   if (temp > 34)
-    recommendations.push({ text: `High temperature (${Math.round(temp)}°C) — apply mulch around crops to retain soil moisture.`, tag: "Advisory" });
+    recommendations.push({ icon: "🌡️", text: `High temperature (${Math.round(temp)}°C) — apply mulch around crops to retain soil moisture.`, tag: "Advisory" });
 
   return recommendations;
 };
 
-// ── Fetch AQI from OWM Air Pollution API ─────────────────────────────────────
+// ── AQI ──────────────────────────────────────────────────────────────────────
 
-const fetchAQI = async () => {
-  const url = `https://api.openweathermap.org/data/2.5/air_pollution?lat=${LAT}&lon=${LON}&appid=${OWM_KEY}`;
-  const { data } = await axios.get(url);
-  return data;
+const AQI_LABELS = ["Good", "Fair", "Moderate", "Poor", "Very Poor"];
+
+const fetchAQI = async (lat = 10.8505, lon = 76.2711) => {
+  const res = await axios.get(
+    `https://api.openweathermap.org/data/2.5/air_pollution`,
+    { params: { lat, lon, appid: OWM_KEY } }
+  );
+  const item      = res.data.list[0];
+  const aqiIndex  = item.main.aqi;
+  const aqiValue  = [25, 75, 125, 200, 350][aqiIndex - 1] || 50;
+  return {
+    aqi:        aqiValue,
+    label:      AQI_LABELS[aqiIndex - 1] || "Unknown",
+    components: item.components,
+  };
 };
 
-// ── Fetch hourly forecast ─────────────────────────────────────────────────────
-// UV Index  → Open-Meteo (free, no key needed)
-// Rain/temp → OWM /forecast (free tier)
+// ── Hourly Forecast ───────────────────────────────────────────────────────────
 
-const fetchHourlyForecast = async () => {
+const WEATHER_ICONS = {
+  Clear: "☀️", Clouds: "☁️", Rain: "🌧️",
+  Drizzle: "🌦️", Thunderstorm: "⛈️", Snow: "❄️",
+  Mist: "🌫️", Fog: "🌫️",
+};
+
+const fetchHourlyForecast = async (lat = 10.8505, lon = 76.2711) => {
   const [openMeteoRes, owmRes] = await Promise.allSettled([
     axios.get(
-      `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&hourly=uv_index&timezone=Asia%2FKolkata&forecast_days=1`
+      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=uv_index&timezone=Asia%2FKolkata&forecast_days=1`
     ),
     axios.get(
-      `https://api.openweathermap.org/data/2.5/forecast?lat=${LAT}&lon=${LON}&units=metric&cnt=8&appid=${OWM_KEY}`
+      `https://api.openweathermap.org/data/2.5/forecast`,
+      { params: { lat, lon, units: "metric", cnt: 8, appid: OWM_KEY } }
     ),
   ]);
 
-  // Current hour UV from Open-Meteo
   let currentUVI = 0;
   if (openMeteoRes.status === "fulfilled") {
     const currentHour = new Date().getHours();
     currentUVI = openMeteoRes.value.data.hourly?.uv_index?.[currentHour] ?? 0;
-  } else {
-    console.warn("Open-Meteo UV fetch failed:", openMeteoRes.reason?.message);
   }
 
-  // Hourly slots from OWM /forecast
   let hourlySlots = [];
   if (owmRes.status === "fulfilled") {
     hourlySlots = owmRes.value.data.list.map((h) => ({
-      dt:   h.dt,
+      time: new Date(h.dt * 1000).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true }),
       temp: h.main.temp,
-      pop:  h.pop  ?? 0,
-      rain: h.rain ?? {},
-      uvi:  0,
+      rain: h.rain?.["3h"] ?? 0,
+      icon: WEATHER_ICONS[h.weather[0].main] || "🌤️",
+      description: h.weather[0].description,
+      pop:  h.pop ?? 0,
     }));
-  } else {
-    console.warn("OWM forecast fetch failed:", owmRes.reason?.message);
   }
 
-  return {
-    current: { uvi: currentUVI },
-    hourly:  hourlySlots,
-  };
+  return { current: { uvi: currentUVI }, hourly: hourlySlots };
 };
 
 module.exports = { buildAlerts, buildRecommendations, fetchAQI, fetchHourlyForecast };
