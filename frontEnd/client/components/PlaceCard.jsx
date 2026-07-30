@@ -1,19 +1,8 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
+import { MapPin, Calendar } from 'lucide-react'
 
-interface PlaceCardProps {
-  place: {
-    _id?: string
-    name?: string
-    description?: string
-    location?: string
-    image?: string
-    category?: string
-    [key: string]: unknown
-  }
-}
-
-const PlaceCard = ({ place }: PlaceCardProps) => {
+const PlaceCard = ({ place }) => {
   return (
     <div className="p-0 overflow-hidden transition-all duration-200 card hover:shadow-lg hover:-translate-y-1">
       {place.image && (
@@ -31,7 +20,7 @@ const PlaceCard = ({ place }: PlaceCardProps) => {
         <h3 className="mb-1 text-lg font-bold text-forest-800">{place.name}</h3>
         {place.location && (
           <p className="flex items-center gap-1 mb-2 text-sm text-gray-500">
-             {place.location}
+            <MapPin size={14} /> {place.location}
           </p>
         )}
         {place.description && (
@@ -39,9 +28,9 @@ const PlaceCard = ({ place }: PlaceCardProps) => {
         )}
         <Link
           to={`/bookings/new?place=${place._id}&name=${encodeURIComponent(place.name || '')}`}
-          className="block w-full py-2 mt-3 text-sm text-center btn-primary"
+          className="flex items-center justify-center gap-1.5 w-full py-2 mt-3 text-sm text-center btn-primary"
         >
-           Book Now
+          <Calendar size={14} /> Book Now
         </Link>
       </div>
     </div>

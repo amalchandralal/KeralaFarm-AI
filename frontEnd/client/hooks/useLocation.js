@@ -1,14 +1,7 @@
 import { useState, useEffect } from 'react'
 
-export interface UserLocation {
-  lat: number
-  lon: number
-  label: string      // human-readable e.g. "Thrissur, Kerala"
-  source: 'gps' | 'fallback'
-}
-
 // Kerala centre as fallback
-const KERALA_FALLBACK: UserLocation = {
+const KERALA_FALLBACK = {
   lat: 10.8505,
   lon: 76.2711,
   label: 'Kerala (default)',
@@ -19,7 +12,7 @@ const CACHE_KEY = 'user_location'
 const CACHE_TTL = 10 * 60 * 1000  // 10 minutes
 
 // Try to reverse-geocode lat/lon → district name using OpenStreetMap (free)
-const reverseGeocode = async (lat: number, lon: number): Promise<string> => {
+const reverseGeocode = async (lat, lon) => {
   try {
     const res = await fetch(
       `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`,
@@ -37,7 +30,7 @@ const reverseGeocode = async (lat: number, lon: number): Promise<string> => {
 }
 
 export const useLocation = () => {
-  const [location, setLocation]   = useState<UserLocation | null>(null)
+  const [location, setLocation]   = useState(null)
   const [loading, setLoading]     = useState(true)
   const [error, setError]         = useState('')
   const [permissionDenied, setPermissionDenied] = useState(false)
@@ -69,7 +62,7 @@ export const useLocation = () => {
       async (pos) => {
         const { latitude: lat, longitude: lon } = pos.coords
         const label = await reverseGeocode(lat, lon)
-        const loc: UserLocation = { lat, lon, label, source: 'gps' }
+        const loc = { lat, lon, label, source: 'gps' }
         setLocation(loc)
         setLoading(false)
         // Cache it

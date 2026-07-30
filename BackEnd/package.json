@@ -4,26 +4,29 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon index.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "lint": "tsc --noEmit"
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
-    "axios": "^1.13.6",
+    "axios": "^1.19.0",
     "bcrypt": "^5.1.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
+    "helmet": "^8.3.0",
     "image-downloader": "^4.3.0",
     "jsonwebtoken": "^9.0.3",
     "mime-types": "^3.0.2",
     "mongoose": "^9.2.2",
+    "morgan": "^1.11.0",
     "multer": "^2.0.2",
     "nodemon": "^3.0.2",
-    "stripe": "^14.20.0"
+    "stripe": "^14.20.0",
+    "winston": "^3.19.0"
   }
 }

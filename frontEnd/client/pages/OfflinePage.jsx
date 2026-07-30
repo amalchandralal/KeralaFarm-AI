@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -7,32 +6,41 @@ import {
   BookOpen, 
   Search, 
   CheckCircle2, 
-  Clock, 
-  ChevronDown, 
   ChevronUp,
   Info,
   Smartphone,
-  WifiOff
+  WifiOff,
+  Wheat,
+  TreePalm,
+  Banana,
+  Leaf,
+  CalendarDays,
+  Globe
 } from 'lucide-react';
+// import { 
+//   Download, 
+//   Trash2, 
+//   BookOpen, 
+//   Search, 
+//   CheckCircle2, 
+//   ChevronUp,
+//   Info,
+//   Smartphone,
+//   WifiOff,
+//   Wheat,
+//   Coconut,
+//   Banana,
+//   Leaf,
+//   CalendarDays,
+//   Globe
+// } from 'lucide-react';
 
-interface Guide {
-  id: string;
-  title: string;
-  titleMal: string;
-  category: string;
-  icon: string;
-  size: string;
-  content: string[];
-  downloaded?: boolean;
-}
-
-const GUIDES: Guide[] = [
+const GUIDES = [
   {
     id: 'paddy-pest',
     title: 'Paddy Pest Management',
-    titleMal: 'നെൽകൃഷി കീട നിയന്ത്രണം',
     category: 'Pest Control',
-    icon: '🌾',
+    icon: Wheat,
     size: '120 KB',
     content: [
       'Stem Borer: Apply Chlorpyrifos 2.5ml per liter of water. Spray at evening.',
@@ -45,12 +53,11 @@ const GUIDES: Guide[] = [
   },
   {
     id: 'coconut-care',
-    title: 'Coconut Tree Care Guide',
-    titleMal: 'തെങ്ങ് പരിചരണ മാർഗദർശി',
-    category: 'Crop Care',
-    icon: '🥥',
-    size: '95 KB',
-    content: [
+  title: 'Coconut Tree Care Guide',
+  category: 'Crop Care',
+  icon: TreePalm,
+  size: '95 KB',
+  content: [
       'Fertilizer: Apply 1.3 kg Urea + 2 kg Super Phosphate + 3.5 kg MOP per tree per year.',
       'Rhinoceros Beetle: Fill crown with sand + Naphthalene balls. Apply Carbaryl dust.',
       'Bud Rot: Apply Bordeaux mixture (1%) to crown during monsoon. Repeat monthly.',
@@ -62,9 +69,8 @@ const GUIDES: Guide[] = [
   {
     id: 'banana-guide',
     title: 'Banana Cultivation Guide',
-    titleMal: 'വാഴക്കൃഷി മാർഗദർശി',
     category: 'Crop Guide',
-    icon: '🍌',
+    icon: Banana,
     size: '88 KB',
     content: [
       'Planting: Use disease-free suckers. Plant at 1.8m × 1.8m spacing.',
@@ -78,9 +84,8 @@ const GUIDES: Guide[] = [
   {
     id: 'organic-farming',
     title: 'Organic Farming Basics',
-    titleMal: 'ജൈവ കൃഷി അടിസ്ഥാനങ്ങൾ',
     category: 'Organic',
-    icon: '🌿',
+    icon: Leaf,
     size: '110 KB',
     content: [
       'Compost: Mix green waste + dry waste (1:1). Turn weekly. Ready in 45-60 days.',
@@ -94,9 +99,8 @@ const GUIDES: Guide[] = [
   {
     id: 'weather-farming',
     title: 'Kerala Season Farming Calendar',
-    titleMal: 'കേരള കൃഷി കലണ്ടർ',
     category: 'Planning',
-    icon: '📅',
+    icon: CalendarDays,
     size: '75 KB',
     content: [
       'Kharif (Jun-Sep): Paddy, Tapioca, Ginger, Turmeric planting season.',
@@ -110,9 +114,8 @@ const GUIDES: Guide[] = [
   {
     id: 'soil-health',
     title: 'Soil Health Management',
-    titleMal: 'മണ്ണ് ആരോഗ്യ പരിപാലനം',
     category: 'Soil',
-    icon: '🌍',
+    icon: Globe,
     size: '102 KB',
     content: [
       'Soil Testing: Test every 3 years. Send samples to Krishi Bhavan lab (free).',
@@ -126,45 +129,44 @@ const GUIDES: Guide[] = [
 ];
 
 export default function OfflinePage() {
-  const [downloaded, setDownloaded] = useState<Set<string>>(() => {
+  const [downloaded, setDownloaded] = useState(() => {
     try { 
       const stored = localStorage.getItem('downloaded_guides');
       const parsed = stored ? JSON.parse(stored) : [];
-      return new Set(Array.isArray(parsed) ? (parsed as string[]) : []);
+      return new Set(Array.isArray(parsed) ? parsed : []);
     } catch { 
-      return new Set<string>();
+      return new Set();
     }
   });
-  const [openGuide, setOpenGuide] = useState<string | null>(null);
+  const [openGuide, setOpenGuide] = useState(null);
   const [search, setSearch] = useState('');
-  const [downloading, setDownloading] = useState<string | null>(null);
+  const [downloading, setDownloading] = useState(null);
 
-  const saveDownloaded = (ids: Set<string>) => {
+  const saveDownloaded = (ids) => {
     setDownloaded(ids);
     localStorage.setItem('downloaded_guides', JSON.stringify([...ids]));
   };
 
-  const handleDownload = (id: string) => {
+  const handleDownload = (id) => {
     setDownloading(id);
     // Simulate network delay
     setTimeout(() => {
-      const newSet = new Set<string>(downloaded);
+      const newSet = new Set(downloaded);
       newSet.add(id);
       saveDownloaded(newSet);
       setDownloading(null);
     }, 1500);
   };
 
-  const handleRemove = (id: string) => {
-    const newSet = new Set<string>(downloaded);
+  const handleRemove = (id) => {
+    const newSet = new Set(downloaded);
     newSet.delete(id);
     saveDownloaded(newSet);
   };
 
   const filtered = GUIDES.filter(g =>
     g.title.toLowerCase().includes(search.toLowerCase()) ||
-    g.category.toLowerCase().includes(search.toLowerCase()) ||
-    g.titleMal.includes(search)
+    g.category.toLowerCase().includes(search.toLowerCase())
   );
 
   const dlCount = downloaded.size;
@@ -189,9 +191,6 @@ export default function OfflinePage() {
               Offline <span className="text-emerald-600">Guides</span>
             </h1>
           </motion.div>
-          <p className="mb-2 text-lg font-medium text-slate-500 font-malayalam">
-            ഓഫ്ലൈൻ കൃഷി ഗൈഡുകൾ
-          </p>
           <p className="max-w-2xl text-slate-500">
             Download essential farming guides to your device. Once downloaded, you can access them even without an internet connection in remote farm locations.
           </p>
@@ -241,6 +240,7 @@ export default function OfflinePage() {
               const isDownloaded = downloaded.has(guide.id);
               const isOpen = openGuide === guide.id;
               const isDownloading = downloading === guide.id;
+              const Icon = guide.icon;
 
               return (
                 <motion.div 
@@ -256,8 +256,8 @@ export default function OfflinePage() {
                   <div className="p-6 md:p-8">
                     <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
                       <div className="flex items-start gap-5">
-                        <div className="flex items-center justify-center w-16 h-16 text-4xl shadow-inner bg-slate-50 rounded-2xl">
-                          {guide.icon}
+                        <div className="flex items-center justify-center w-16 h-16 shadow-inner bg-slate-50 rounded-2xl text-emerald-600">
+                          <Icon size={28} />
                         </div>
                         <div>
                           <div className="flex items-center gap-3 mb-1">
@@ -268,10 +268,7 @@ export default function OfflinePage() {
                               </span>
                             )}
                           </div>
-                          <p className="mb-3 text-sm font-medium text-slate-400 font-malayalam">
-                            {guide.titleMal}
-                          </p>
-                          <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-4 mt-2">
                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-1 rounded-lg">
                               {guide.category}
                             </span>

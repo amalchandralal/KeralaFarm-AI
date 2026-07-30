@@ -1,47 +1,38 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { registerUser } from "../services/api";
-import { useAuth } from "../contexts/AuthContext";
+import React, { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { loginUser } from '../services/api'
+import { useAuth } from '../contexts/AuthContext'
 
-const RegisterPage = () => {
-  const[name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const[loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+const LoginPage = () => {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
   
-  const { refreshUser } = useAuth();
-  const navigate = useNavigate();
+  const { refreshUser } = useAuth()
+  const navigate = useNavigate()
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name || !email || !password) {
-      setError("Please fill in all fields.");
-      return;
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!email || !password) { 
+      setError('Please fill in all fields.')
+      return 
     }
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
-      return;
-    }
-    setLoading(true);
-    setError("");
+    
+    setLoading(true)
+    setError('')
     
     try {
-      await registerUser({ name, email, password });
-      navigate("/login");
-      // await registerUser({ name, email, password })
-      // await refreshUser()
-      // navigate('/')
-    } catch (err: unknown) {
-      const e = err as { response?: { data?: { message?: string } } };
-      setError(
-        e?.response?.data?.message || "Registration failed. Please try again."
-      );
+      await loginUser({ email, password })
+      await refreshUser()
+      navigate('/')
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Login failed. Please check your credentials.')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
     <div className="min-h-[85vh] flex items-center justify-center px-4 py-12 bg-gray-50/50">
@@ -51,16 +42,10 @@ const RegisterPage = () => {
         <div className="flex flex-col items-center mb-8 text-center">
           <div className="inline-flex items-center justify-center w-16 h-16 mb-5 rounded-full shadow-sm bg-emerald-100">
             <svg className="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
           </div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-gray-900">Create Account</h1>
-          <p
-            className="mt-2 text-sm tracking-wide text-gray-500"
-            style={{ fontFamily: "Noto Sans Malayalam, sans-serif" }}
-          >
-            KeralaFarm-ൽ ചേരൂ
-          </p>
+          <h1 className="text-3xl font-extrabold tracking-tight text-gray-900">Welcome Back</h1>
         </div>
 
         {/* Card Section */}
@@ -79,22 +64,6 @@ const RegisterPage = () => {
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label htmlFor="name" className="block mb-1.5 text-sm font-semibold text-gray-700">
-                Full Name / പേര്
-              </label>
-              <input
-                id="name"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Your name"
-                required
-                className="block w-full px-4 py-3 text-gray-900 transition-all duration-200 border border-gray-200 appearance-none bg-gray-50 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 sm:text-sm"
-                autoComplete="name"
-              />
-            </div>
-
-            <div>
               <label htmlFor="email" className="block mb-1.5 text-sm font-semibold text-gray-700">
                 Email Address
               </label>
@@ -102,14 +71,14 @@ const RegisterPage = () => {
                 id="email"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={e => setEmail(e.target.value)}
                 placeholder="your@email.com"
                 required
                 className="block w-full px-4 py-3 text-gray-900 transition-all duration-200 border border-gray-200 appearance-none bg-gray-50 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 sm:text-sm"
                 autoComplete="email"
               />
             </div>
-
+            
             <div>
               <label htmlFor="password" className="block mb-1.5 text-sm font-semibold text-gray-700">
                 Password
@@ -119,11 +88,11 @@ const RegisterPage = () => {
                   id="password"
                   type={showPassword ? "text" : "password"}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Min 6 characters"
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="••••••••"
                   required
                   className="block w-full px-4 py-3 pr-10 text-gray-900 transition-all duration-200 border border-gray-200 appearance-none bg-gray-50 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 sm:text-sm"
-                  autoComplete="new-password"
+                  autoComplete="current-password"
                 />
                 <button
                   type="button"
@@ -144,9 +113,9 @@ const RegisterPage = () => {
               </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={loading}
+            <button 
+              type="submit" 
+              disabled={loading} 
               className="relative flex items-center justify-center w-full px-4 py-3.5 mt-2 text-sm font-bold text-white transition-all duration-200 bg-emerald-600 border border-transparent rounded-xl hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-600 shadow-md hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:shadow-md"
             >
               {loading ? (
@@ -155,23 +124,18 @@ const RegisterPage = () => {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  Creating account...
+                  Logging in...
                 </>
-              ) : (
-                "Create Account"
-              )}
+              ) : 'Sign In'}
             </button>
           </form>
 
           {/* Footer Link */}
           <div className="pt-6 mt-6 border-t border-gray-100">
             <p className="text-sm text-center text-gray-600">
-              Already have an account?{" "}
-              <Link
-                to="/login"
-                className="font-semibold transition-colors duration-200 text-emerald-600 hover:text-emerald-700 hover:underline"
-              >
-                Sign in here
+              Don't have an account?{' '}
+              <Link to="/register" className="font-semibold transition-colors duration-200 text-emerald-600 hover:text-emerald-700 hover:underline">
+                Create an account
               </Link>
             </p>
           </div>
@@ -179,7 +143,7 @@ const RegisterPage = () => {
         
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default RegisterPage;
+export default LoginPage

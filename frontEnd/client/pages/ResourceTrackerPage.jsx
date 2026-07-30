@@ -1,62 +1,37 @@
 import React, { useState, useEffect } from 'react'
 
-interface InputEntry {
-  _id: string
-  date: string
-  category: 'fertilizer' | 'pesticide' | 'labor' | 'seed' | 'equipment' | 'other'
-  item: string
-  quantity: string
-  unit: string
-  cost: number
-  notes: string
-}
-
-interface LivePrice {
-  crop: string
-  market: string
-  min: string
-  max: string
-  modal: string
-  unit: string
-  date: string
-}
-
-const SCHEMES =[
-  { title: 'PM-KISAN',               desc: '₹6000/year direct income support to farmers',                         status: 'Active',  icon: '💰' },
-  { title: 'Fertilizer Subsidy',     desc: 'Urea at ₹242/bag (MRP), DAP at ₹1350/bag via Krishi Bhavan',         status: 'Active',  icon: '🌱' },
-  { title: 'Fasal Bima Yojana',      desc: 'Crop insurance up to ₹2 lakh coverage against losses',               status: 'Active',  icon: '🛡️' },
-  { title: 'Krishi Bhavan Loan',     desc: '0% interest short-term crop loans up to ₹3 lakh via Kerala Bank',    status: 'Active',  icon: '🏦' },
-  { title: 'Organic Kerala Mission', desc: 'Subsidy for organic inputs and certification support',                status: 'Active',  icon: '🌿' },
-  { title: 'Solar Pump Subsidy',     desc: '90% subsidy on solar water pump installation for irrigation',         status: 'Limited', icon: '☀️' },
+const SCHEMES = [
+  { title: 'PM-KISAN',               desc: '₹6000/year direct income support to farmers',                    status: 'Active' },
+  { title: 'Fertilizer Subsidy',     desc: 'Urea at ₹242/bag (MRP), DAP at ₹1350/bag via Krishi Bhavan',      status: 'Active' },
+  { title: 'Fasal Bima Yojana',      desc: 'Crop insurance up to ₹2 lakh coverage against losses',            status: 'Active' },
+  { title: 'Krishi Bhavan Loan',     desc: '0% interest short-term crop loans up to ₹3 lakh via Kerala Bank', status: 'Active' },
+  { title: 'Organic Kerala Mission', desc: 'Subsidy for organic inputs and certification support',            status: 'Active' },
+  { title: 'Solar Pump Subsidy',     desc: '90% subsidy on solar water pump installation for irrigation',      status: 'Limited' },
 ]
 
-const CATEGORIES =['fertilizer','pesticide','labor','seed','equipment','other'] as const
-const UNITS =['kg', 'L', 'bags', 'days', 'nos', 'acres']
+const CATEGORIES = ['fertilizer', 'pesticide', 'labor', 'seed', 'equipment', 'other']
+const UNITS = ['kg', 'L', 'bags', 'days', 'nos', 'acres']
 
-const catIcon: Record<string, string> = {
-  fertilizer: '🌱', pesticide: '💊', labor: '👷', seed: '🌾', equipment: '🔧', other: '📦'
-}
-
-const API = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
 export default function ResourceTrackerPage() {
-  const [tab, setTab] = useState<'inputs' | 'market' | 'schemes'>('inputs')
+  const [tab, setTab] = useState('inputs')
 
   // Input Costs state
-  const [entries, setEntries] = useState<InputEntry[]>([])
+  const [entries, setEntries] = useState([])
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({
     date: new Date().toISOString().split('T')[0],
-    category: 'fertilizer' as typeof CATEGORIES[number],
+    category: 'fertilizer',
     item: '', quantity: '', unit: 'kg', cost: '', notes: ''
   })
 
   // Market Prices state
-  const [marketPrices, setMarketPrices] = useState<LivePrice[]>([])
-  const[marketLoading, setMarketLoading] = useState(false)
+  const [marketPrices, setMarketPrices] = useState([])
+  const [marketLoading, setMarketLoading] = useState(false)
   const [marketError, setMarketError] = useState('')
 
   // ── Load input entries ──
@@ -79,11 +54,11 @@ export default function ResourceTrackerPage() {
     if (tab !== 'market') return;
     setMarketLoading(true);
     setMarketError('');
-    
+
     fetch(`${API}/market-prices`, { credentials: 'include' })
       .then(async (r) => {
         const data = await r.json().catch(() => null); // Catch JSON parsing errors
-        
+
         if (!r.ok) {
           // If status is 401, 500, etc., throw the backend's error message
           throw new Error(data?.message || data?.error || `HTTP Error: ${r.status}`);
@@ -104,6 +79,7 @@ export default function ResourceTrackerPage() {
       })
       .finally(() => setMarketLoading(false));
   }, [tab]);
+
   // ── Add entry ──
   const addEntry = async () => {
     if (!form.item.trim() || !form.cost) return
@@ -135,7 +111,7 @@ export default function ResourceTrackerPage() {
   }
 
   // ── Delete entry ──
-  const deleteEntry = async (id: string) => {
+  const deleteEntry = async (id) => {
     try {
       await fetch(`${API}/input-entries/${id}`, { method: 'DELETE', credentials: 'include' })
       setEntries(prev => prev.filter(e => e._id !== id))
@@ -148,34 +124,34 @@ export default function ResourceTrackerPage() {
   const byCat = CATEGORIES.reduce((acc, c) => {
     acc[c] = entries.filter(e => e.category === c).reduce((s, e) => s + e.cost, 0)
     return acc
-  }, {} as Record<string, number>)
+  }, {})
 
   return (
     <div className="max-w-5xl min-h-screen px-4 py-8 mx-auto bg-gray-50/50">
-      
+
       {/* Header */}
       <div className="mb-8">
-        <h1 className="flex items-center gap-3 text-3xl font-extrabold tracking-tight text-gray-900">
-          <span className="p-2 bg-emerald-100 rounded-xl">📊</span> Resource Tracker
+        <h1 className="text-3xl font-extrabold tracking-tight text-gray-900">
+          Resource Tracker
         </h1>
-        <p className="mt-2 text-sm tracking-wide text-gray-500" style={{ fontFamily: 'Noto Sans Malayalam, sans-serif' }}>
-          വിഭവ ട്രാക്കർ
+        <p className="mt-2 text-sm text-gray-500">
+          Track input costs, market prices, and government schemes
         </p>
       </div>
 
       {/* Segmented Tabs */}
       <div className="flex max-w-2xl p-1 mb-8 space-x-1 bg-gray-200/60 rounded-xl">
         {[
-          { key: 'inputs',  label: '💰 Input Costs' },
-          { key: 'market',  label: '📈 Market Prices' },
-          { key: 'schemes', label: '🏛️ Schemes' },
+          { key: 'inputs',  label: 'Input Costs' },
+          { key: 'market',  label: 'Market Prices' },
+          { key: 'schemes', label: 'Schemes' },
         ].map(t => (
-          <button 
-            key={t.key} 
-            onClick={() => setTab(t.key as typeof tab)}
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
             className={`flex-1 px-4 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ${
-              tab === t.key 
-                ? 'bg-white text-emerald-700 shadow-sm ring-1 ring-black/5' 
+              tab === t.key
+                ? 'bg-white text-emerald-700 shadow-sm ring-1 ring-black/5'
                 : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200/50'
             }`}
           >
@@ -187,7 +163,7 @@ export default function ResourceTrackerPage() {
       {/* ── INPUT COSTS TAB ── */}
       {tab === 'inputs' && (
         <div className="space-y-6 animate-fade-in">
-          
+
           {/* Summary Stats Grid */}
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             <div className="flex flex-col items-center justify-center col-span-2 p-6 text-center border shadow-sm bg-emerald-50 border-emerald-100 rounded-2xl sm:col-span-1">
@@ -196,14 +172,14 @@ export default function ResourceTrackerPage() {
               </p>
               <p className="mt-1.5 text-xs font-semibold text-emerald-600 uppercase tracking-wider">Total Spent</p>
             </div>
-            
-            {(['fertilizer','pesticide','labor'] as const).map(c => (
+
+            {['fertilizer', 'pesticide', 'labor'].map(c => (
               <div key={c} className="p-5 text-center transition-shadow bg-white border border-gray-100 shadow-sm rounded-2xl hover:shadow-md">
                 <p className="text-xl font-bold tracking-tight text-gray-800">
                   ₹{(byCat[c] || 0).toLocaleString('en-IN')}
                 </p>
                 <div className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 capitalize bg-gray-50 px-2 py-1 rounded-md">
-                  <span>{catIcon[c]}</span> {c}
+                  {c}
                 </div>
               </div>
             ))}
@@ -218,8 +194,8 @@ export default function ResourceTrackerPage() {
 
           {/* Form Toggle Button */}
           {!showForm && (
-            <button 
-              onClick={() => setShowForm(true)} 
+            <button
+              onClick={() => setShowForm(true)}
               className="flex items-center justify-center w-full gap-2 px-6 py-3 text-sm font-bold text-white transition-all duration-200 shadow-md sm:w-auto bg-emerald-600 rounded-xl hover:bg-emerald-700 focus:ring-2 focus:ring-offset-2 focus:ring-emerald-600"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
@@ -231,7 +207,7 @@ export default function ResourceTrackerPage() {
           {showForm && (
             <div className="relative p-6 overflow-hidden bg-white border border-gray-100 shadow-lg rounded-2xl shadow-emerald-900/5 animate-fade-in">
               <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500"></div>
-              
+
               <div className="flex items-center justify-between mb-5">
                 <h3 className="text-lg font-bold text-gray-900">Add New Entry</h3>
                 <button onClick={() => setShowForm(false)} className="text-gray-400 transition-colors hover:text-gray-600">
@@ -250,9 +226,9 @@ export default function ResourceTrackerPage() {
                   <div>
                     <label className="block mb-1.5 text-sm font-semibold text-gray-700">Category</label>
                     <select value={form.category}
-                      onChange={e => setForm({...form, category: e.target.value as typeof form.category})}
+                      onChange={e => setForm({...form, category: e.target.value})}
                       className="block w-full px-4 py-2.5 text-gray-900 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all sm:text-sm appearance-none">
-                      {CATEGORIES.map(c => <option key={c} value={c}>{catIcon[c]} {c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
+                      {CATEGORIES.map(c => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
                     </select>
                   </div>
                 </div>
@@ -261,7 +237,7 @@ export default function ResourceTrackerPage() {
                   <label className="block mb-1.5 text-sm font-semibold text-gray-700">Item Name</label>
                   <input value={form.item}
                     onChange={e => setForm({...form, item: e.target.value})}
-                    placeholder="e.g. Urea fertilizer" 
+                    placeholder="e.g. Urea fertilizer"
                     className="block w-full px-4 py-2.5 text-gray-900 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all sm:text-sm" />
                 </div>
 
@@ -270,7 +246,7 @@ export default function ResourceTrackerPage() {
                     <label className="block mb-1.5 text-sm font-semibold text-gray-700">Quantity</label>
                     <input value={form.quantity}
                       onChange={e => setForm({...form, quantity: e.target.value})}
-                      placeholder="e.g. 25" 
+                      placeholder="e.g. 25"
                       className="block w-full px-4 py-2.5 text-gray-900 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all sm:text-sm" />
                   </div>
                   <div>
@@ -285,7 +261,7 @@ export default function ResourceTrackerPage() {
                     <label className="block mb-1.5 text-sm font-semibold text-gray-700">Cost (₹)</label>
                     <input type="number" value={form.cost}
                       onChange={e => setForm({...form, cost: e.target.value})}
-                      placeholder="e.g. 500" 
+                      placeholder="e.g. 500"
                       className="block w-full px-4 py-2.5 text-gray-900 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all sm:text-sm" />
                   </div>
                 </div>
@@ -294,7 +270,7 @@ export default function ResourceTrackerPage() {
                   <label className="block mb-1.5 text-sm font-semibold text-gray-700">Notes (Optional)</label>
                   <input value={form.notes}
                     onChange={e => setForm({...form, notes: e.target.value})}
-                    placeholder="Any additional details..." 
+                    placeholder="Any additional details..."
                     className="block w-full px-4 py-2.5 text-gray-900 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all sm:text-sm" />
                 </div>
 
@@ -306,7 +282,7 @@ export default function ResourceTrackerPage() {
                     className="px-6 py-2.5 text-sm font-bold text-white transition-all duration-200 bg-emerald-600 border border-transparent rounded-xl hover:bg-emerald-700 shadow-md disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2">
                     {saving ? (
                       <><div className="w-4 h-4 border-2 border-white rounded-full border-t-transparent animate-spin" /> Saving…</>
-                    ) : '✅ Save Entry'}
+                    ) : 'Save Entry'}
                   </button>
                 </div>
               </div>
@@ -321,9 +297,6 @@ export default function ResourceTrackerPage() {
             </div>
           ) : entries.length === 0 ? (
             <div className="py-16 text-center bg-white border border-gray-100 border-dashed rounded-2xl">
-              <div className="inline-flex items-center justify-center w-16 h-16 mb-4 rounded-full bg-gray-50">
-                <span className="text-3xl">📋</span>
-              </div>
               <h3 className="mb-1 text-lg font-bold text-gray-900">No entries yet</h3>
               <p className="text-sm text-gray-500">Start tracking your farm inputs to see insights.</p>
             </div>
@@ -331,11 +304,8 @@ export default function ResourceTrackerPage() {
             <div className="space-y-3">
               {entries.map(e => (
                 <div key={e._id} className="flex flex-col gap-4 p-4 transition-shadow bg-white border border-gray-100 shadow-sm sm:flex-row sm:items-center rounded-2xl hover:shadow-md group">
-                  
+
                   <div className="flex items-center flex-1 min-w-0 gap-4">
-                    <div className="flex items-center justify-center flex-shrink-0 w-12 h-12 text-2xl rounded-full bg-emerald-50">
-                      {catIcon[e.category]}
-                    </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
                         <p className="text-base font-bold text-gray-900 truncate">{e.item}</p>
@@ -351,7 +321,7 @@ export default function ResourceTrackerPage() {
                       {e.notes && <p className="mt-1 text-sm italic text-gray-400 line-clamp-1">{e.notes}</p>}
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center justify-between w-full gap-4 pt-3 mt-2 border-t sm:justify-end sm:w-auto sm:pt-0 sm:border-0 border-gray-50 sm:mt-0">
                     <p className="text-lg font-extrabold text-emerald-700">₹{e.cost.toLocaleString('en-IN')}</p>
                     <button onClick={() => deleteEntry(e._id)}
@@ -360,7 +330,7 @@ export default function ResourceTrackerPage() {
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                     </button>
                   </div>
-                  
+
                 </div>
               ))}
             </div>
@@ -396,9 +366,6 @@ export default function ResourceTrackerPage() {
             </div>
           ) : marketPrices.length === 0 && !marketError ? (
             <div className="py-16 text-center bg-white border border-gray-100 border-dashed rounded-2xl">
-              <div className="inline-flex items-center justify-center w-16 h-16 mb-4 rounded-full bg-gray-50">
-                <span className="text-3xl">📉</span>
-              </div>
               <h3 className="mb-1 text-lg font-bold text-gray-900">No Data Today</h3>
               <p className="text-sm text-gray-500">Market prices haven't been updated yet.</p>
             </div>
@@ -435,20 +402,15 @@ export default function ResourceTrackerPage() {
              <h2 className="text-lg font-bold text-gray-900">Government Support</h2>
              <p className="text-sm text-gray-500">Active subsidies and schemes for Kerala farmers</p>
           </div>
-          
+
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {SCHEMES.map(s => (
               <div key={s.title} className="p-5 transition-all bg-white border border-gray-100 shadow-sm rounded-2xl hover:shadow-md group">
                 <div className="flex items-start justify-between gap-3 mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center justify-center w-10 h-10 text-xl transition-transform bg-gray-50 rounded-xl group-hover:scale-110">
-                      {s.icon}
-                    </div>
-                    <p className="text-base font-extrabold text-gray-900">{s.title}</p>
-                  </div>
+                  <p className="text-base font-extrabold text-gray-900">{s.title}</p>
                   <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ring-1 ring-inset flex-shrink-0 ${
-                    s.status === 'Active' 
-                      ? 'bg-emerald-50 text-emerald-700 ring-emerald-600/20' 
+                    s.status === 'Active'
+                      ? 'bg-emerald-50 text-emerald-700 ring-emerald-600/20'
                       : 'bg-amber-50 text-amber-700 ring-amber-600/20'
                   }`}>
                     {s.status}
@@ -456,7 +418,7 @@ export default function ResourceTrackerPage() {
                 </div>
                 <p className="mb-4 text-sm leading-relaxed text-gray-600">{s.desc}</p>
                 <button className="flex items-center gap-1 text-sm font-semibold text-emerald-600 hover:text-emerald-700 group/btn">
-                  Learn more 
+                  Learn more
                   <svg className="w-4 h-4 transition-transform transform group-hover/btn:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                 </button>
               </div>
@@ -464,9 +426,6 @@ export default function ResourceTrackerPage() {
           </div>
 
           <div className="flex flex-col items-center justify-center gap-2 p-6 mt-6 text-center border bg-emerald-50 border-emerald-100 rounded-2xl">
-            <div className="flex items-center justify-center w-12 h-12 mb-1 text-2xl bg-white rounded-full shadow-sm">
-              📞
-            </div>
             <p className="text-base font-bold text-emerald-900">Contact your local Krishi Bhavan</p>
             <p className="text-sm text-emerald-700/80">For personalized scheme eligibility and application help in your panchayat.</p>
           </div>

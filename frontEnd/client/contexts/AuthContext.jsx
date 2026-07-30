@@ -1,30 +1,10 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import React, { createContext, useContext, useState, useEffect } from 'react'
 import { getProfile, logoutUser } from '../services/api'
 
-export interface User {
-  name?: string
-  email?: string
-  role?: string
-  phone?: string
-  location?: string
-  createdAt?: string
-  created_at?: string
-  _id?: string
-  [key: string]: unknown
-}
+const AuthContext = createContext(undefined)
 
-interface AuthContextType {
-  user: User | null
-  loading: boolean
-  setUser: (user: User | null) => void
-  logout: () => Promise<void>
-  refreshUser: () => Promise<void>
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
-
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null)
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
   const refreshUser = async () => {

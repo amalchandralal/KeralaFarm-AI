@@ -2,8 +2,8 @@ const axios = require("axios");
 
 const getMarketPrices = async (req, res) => {
   try {
-    const state = "Kerala";
-    const url = `https://api.data.gov.in/resource/9ef84268-d588-465a-a308-a864a43d0070?api-key=${process.env.DATA_GOV_KEY}&format=json&filters[state]=${state}&limit=50`;
+    const state = "Keralam";
+    const url = `https://api.data.gov.in/resource/9ef84268-d588-465a-a308-a864a43d0070?api-key=${process.env.DATA_GOV_KEY}&format=json&filters[state.keyword]=${state}&limit=50`;
 
     const response = await axios.get(url);
     const records = response.data.records || [];

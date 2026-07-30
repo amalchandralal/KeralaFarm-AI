@@ -1,3 +1,4 @@
+const isProduction = process.env.NODE_ENV === "production";
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const { JWT_SECRET } = require("../utils/constants");
@@ -33,8 +34,8 @@ const login = async (req, res) => {
         res
           .cookie("token", token, {
             httpOnly: true,
-            secure: true, // ← required for HTTPS (Vercel/Render)
-            sameSite: "none", // ← required for cross-domain cookies
+            secure: isProduction,
+            sameSite: isProduction ? "none" : "lax",
           })
           .json(user);
       },
@@ -58,11 +59,13 @@ const profile = (req, res) => {
 };
 
 const logout = (req, res) => {
-  res.cookie("token", "", {
-  httpOnly: true,
-  secure: true,
-  sameSite: "none",
-}).json(true)
+  res
+    .cookie("token", "", {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
+    })
+    .json(true);
 };
 
 module.exports = { register, login, profile, logout };

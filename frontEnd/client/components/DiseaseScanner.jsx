@@ -1,0 +1,199 @@
+import React, { useState, useRef } from "react";
+import { detectDisease } from "../services/api";
+
+const DiseaseScanner = () => {
+  const [image, setImage] = useState(null);
+  const [preview, setPreview] = useState("");
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const fileRef = useRef(null);
+
+  const handleFile = (file) => {
+    setImage(file);
+    setResult(null);
+    setError("");
+    const reader = new FileReader();
+    reader.onloadend = () => setPreview(reader.result);
+    reader.readAsDataURL(file);
+  };
+
+  const handleChange = (e) => {
+    if (e.target.files?.[0]) handleFile(e.target.files[0]);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    if (e.dataTransfer.files?.[0]) handleFile(e.dataTransfer.files[0]);
+  };
+
+  const handleScan = async () => {
+    if (!image) return;
+    setLoading(true);
+    setError("");
+    try {
+      const data = await detectDisease(image);
+      setResult(data);
+    } catch {
+      setError("Image upload failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const confidence = result?.confidence_level;
+  const confNum =
+    typeof confidence === "number"
+      ? confidence
+      : parseFloat(String(confidence)) || 0;
+
+  return (
+    <div className="space-y-6">
+      {/* Upload Area */}
+      <div
+        onDrop={handleDrop}
+        onDragOver={(e) => e.preventDefault()}
+        onClick={() => fileRef.current?.click()}
+        className="p-8 text-center transition-all border-dashed cursor-pointer border-3 border-forest-300 rounded-2xl hover:border-forest-500 hover:bg-forest-50"
+      >
+        {preview ? (
+          <img
+            src={preview}
+            alt="Crop preview"
+            className="object-contain mx-auto max-h-64 rounded-xl"
+          />
+        ) : (
+          <div>
+            <p className="mb-3 text-5xl"></p>
+            <p className="text-lg font-medium text-forest-700">
+              Upload crop photo
+            </p>
+            <p className="mt-1 text-sm text-gray-500">Click or drag & drop</p>
+          </div>
+        )}
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={handleChange}
+          className="hidden"
+        />
+      </div>
+
+      {/* Actions */}
+      {image && (
+        <div className="flex gap-3">
+          <button
+            onClick={() => {
+              setImage(null);
+              setPreview("");
+              setResult(null);
+            }}
+            className="flex-1 btn-outline"
+          >
+            ✕ Clear
+          </button>
+          <button
+            onClick={handleScan}
+            disabled={loading}
+            className="flex items-center justify-center flex-1 gap-2 btn-primary"
+          >
+            {loading ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white rounded-full border-t-transparent animate-spin" />
+                Analyzing...
+              </>
+            ) : (
+              <> Scan for Disease</>
+            )}
+          </button>
+        </div>
+      )}
+
+      {/* Error */}
+      {error && (
+        <div className="p-4 text-red-700 border border-red-200 bg-red-50 rounded-xl">
+           {error}
+        </div>
+      )}
+
+      {/* Results */}
+      {result && !loading && (
+        <div className="space-y-4 fade-in-up">
+          <h3 className="flex items-center gap-2 text-xl font-bold text-forest-800">
+             Analysis Results
+          </h3>
+
+          {/* Confidence */}
+          {confidence !== undefined && (
+            <div className="card">
+              <div className="flex justify-between mb-2">
+                <span className="text-sm font-medium text-gray-600">
+                  Confidence Level
+                </span>
+                <span
+                  className={`font-bold ${confNum > 70 ? "text-forest-600" : confNum > 40 ? "text-yellow-600" : "text-red-600"}`}
+                >
+                  {typeof confidence === "number"
+                    ? `${confidence}%`
+                    : confidence}
+                </span>
+              </div>
+              <div className="w-full h-3 bg-gray-200 rounded-full">
+                <div
+                  className={`h-3 rounded-full transition-all ${confNum > 70 ? "bg-forest-500" : confNum > 40 ? "bg-yellow-500" : "bg-red-500"}`}
+                  style={{ width: `${Math.min(confNum, 100)}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Disease Name */}
+          {result?.disease_name && (
+            <div className="border-l-4 border-red-400 card">
+              <p className="mb-1 text-xs font-medium text-red-500 uppercase">
+                Disease Detected
+              </p>
+              <p className="text-xl font-bold text-gray-800">
+                {result.disease_name}
+              </p>
+            </div>
+          )}
+
+          {/* Causes */}
+          {result?.possible_causes && (
+            <div className="border-l-4 border-yellow-400 card">
+              <p className="mb-1 text-xs font-medium text-yellow-600 uppercase">
+                Possible Causes
+              </p>
+              <p className="text-gray-700">{result.possible_causes}</p>
+            </div>
+          )}
+
+          {/* Treatment */}
+          {result?.suggested_treatment && (
+            <div className="border-l-4 card border-forest-400">
+              <p className="mb-1 text-xs font-medium uppercase text-forest-600">
+                Suggested Treatment
+              </p>
+              <p className="text-gray-700">{result.suggested_treatment}</p>
+            </div>
+          )}
+
+          {/* Fertilizer */}
+          {result?.fertilizer_guidance && (
+            <div className="border-l-4 card border-earth-400">
+              <p className="mb-1 text-xs font-medium uppercase text-earth-600">
+                Fertilizer Guidance
+              </p>
+              <p className="text-gray-700">{result.fertilizer_guidance}</p>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default DiseaseScanner;

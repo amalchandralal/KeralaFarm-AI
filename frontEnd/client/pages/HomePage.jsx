@@ -5,33 +5,16 @@ import {
   Sprout, 
   Mic, 
   MapPin,
-  CheckCircle2,
   ArrowRight,
   Play,
-  LucideIcon,
-  AlertCircle,
-  Clock,
-  ChevronRight,
-  Users,
   ShieldCheck,
   Zap
 } from 'lucide-react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import React, { useEffect, useState, useRef } from 'react';
- 
 
-interface FeatureCardProps {
-  icon: any;
-  title: string;
-  titleMal: string;
-  description: string;
-  link: string;
-  index: number;
-  [key: string]: any;
-}
-
-const FeatureCard = ({ icon: Icon, title, titleMal, description, link, index }: FeatureCardProps) => {
+const FeatureCard = ({ icon: Icon, title, description, link, index }) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -47,8 +30,7 @@ const FeatureCard = ({ icon: Icon, title, titleMal, description, link, index }: 
           <Icon className="w-8 h-8" />
         </div>
         
-        <h3 className="mb-1 text-2xl font-bold text-slate-900">{title}</h3>
-        <p className="mb-4 text-sm font-bold tracking-wide text-emerald-600 font-malayalam">{titleMal}</p>
+        <h3 className="mb-4 text-2xl font-bold text-slate-900">{title}</h3>
         
         <p className="flex-grow mb-8 leading-relaxed text-slate-600">
           {description}
@@ -70,7 +52,7 @@ const FeatureCard = ({ icon: Icon, title, titleMal, description, link, index }: 
 
 const HeroSection = () => {
   const containerRef = useRef(null);
-  const [weather, setWeather] = useState<{ temp: number; location: string } | null>(null);
+  const [weather, setWeather] = useState(null);
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start start", "end start"]
@@ -80,7 +62,7 @@ const HeroSection = () => {
   const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
 
   useEffect(() => {
-    const fetchWeather = async (lat: number, lon: number) => {
+    const fetchWeather = async (lat, lon) => {
       try {
         // Fetch weather from Open-Meteo (Free, no key required)
         const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
@@ -134,8 +116,6 @@ const HeroSection = () => {
           transition={{ duration: 0.8, ease: "easeOut" }}
           style={{ y, opacity }}
         >
-          
-          
           <h1 className="text-6xl md:text-8xl font-black tracking-tight text-slate-900 leading-[0.9] mb-8">
             Smart Farming <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-lime-500">
@@ -143,8 +123,8 @@ const HeroSection = () => {
             </span>
           </h1>
           
-          <p className="max-w-xl mb-12 text-xl leading-relaxed text-slate-600 font-malayalam">
-            കേരളത്തിലെ കർഷകർക്കായി ഒരു സ്മാർട്ട് സഹായി. കൃഷിയിലെ സംശയങ്ങൾക്കും രോഗനിർണ്ണയത്തിനും ഇപ്പോൾ കൃഷിAI കൂടെയുണ്ട്.
+          <p className="max-w-xl mb-12 text-xl leading-relaxed text-slate-600">
+            A smart assistant for Kerala's farmers. Get help with crop questions and disease diagnosis, powered by KrishiAI.
           </p>
           
           <div className="flex flex-col gap-4 sm:flex-row sm:gap-6">
@@ -198,59 +178,53 @@ const HeroSection = () => {
     </section>
   );
 };
+
 const features = [
   {
     icon: Scan,
     title: 'Crop Disease Detection',
-    titleMal: 'രോഗ നിർണ്ണയം',
     description: 'Upload a photo of your crop to instantly detect diseases and get treatment recommendations.',
     link: '/scan',
   },
   {
     icon: CloudSun,
     title: 'Weather Advisory',
-    titleMal: 'കാലാവസ്ഥ നിർദ്ദേശം',
     description: 'Get personalized weather-based farming advice to plan your agricultural activities.',
     link: '/dashboard',
   },
   {
     icon: TrendingUp,
     title: 'Market Prices',
-    titleMal: 'വിപണി വില',
     description: 'Ask about current vegetable and crop prices in Kerala markets to get the best deals.',
     link: '/tracker',
   },
   {
     icon: Sprout,
     title: 'Fertilizer Guidance',
-    titleMal: 'വളം നിർദ്ദേശം',
     description: 'Get expert advice on fertilizer usage, soil health, and crop nutrition management.',
     link: '/fertilizer',
   },
   {
     icon: Mic,
     title: 'Voice Assistant',
-    titleMal: 'ശബ്ദ സഹായി',
-    description: 'Ask any farming question in Malayalam or English and get instant AI-powered answers.',
+    description: 'Ask any farming question and get instant AI-powered answers.',
     link: '/voice',
   },
   {
     icon: MapPin,
     title: 'Farm Centers',
-    titleMal: 'കൃഷി കേന്ദ്രങ്ങൾ',
     description: 'Find nearby agricultural service centers, Krishi Bhavans, and farming support places.',
     link: '/places',
   },
 ];
 
 const HomePage = () => {
-  const [insights, setInsights] = useState<any[]>([]);
+  const [insights, setInsights] = useState([]);
   const [loading, setLoading] = useState(true);
 
   return (
     <div className="min-h-screen bg-white">
       <HeroSection />
-
 
       {/* Features Section */}
       <section className="py-32 page-container">
@@ -275,15 +249,6 @@ const HomePage = () => {
               <span className="text-slate-400">In One Place.</span>
             </motion.h2>
           </div>
-          <motion.p 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2 }}
-            className="text-xl text-slate-500 font-malayalam lg:max-w-xs"
-          >
-            ഒരു കർഷകന് ആവശ്യമുള്ളതെല്ലാം ഒരു കുടക്കീഴിൽ.
-          </motion.p>
         </div>
 
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
@@ -292,7 +257,6 @@ const HomePage = () => {
               key={feature.title} 
               icon={feature.icon}
               title={feature.title}
-              titleMal={feature.titleMal}
               description={feature.description}
               link={feature.link}
               index={index} 
@@ -306,7 +270,6 @@ const HomePage = () => {
         <div className="page-container">
           <div className="max-w-3xl mx-auto mb-24 text-center">
             <h2 className="mb-6 text-4xl font-black text-center md:text-6xl text-slate-900">How It Works</h2>
-            <p className="text-2xl font-bold tracking-widest uppercase text-emerald-600 font-malayalam">ലളിതമായ മൂന്ന് ഘട്ടങ്ങൾ</p>
           </div>
           
           <div className="relative grid grid-cols-1 gap-16 md:grid-cols-3">
@@ -318,22 +281,19 @@ const HomePage = () => {
                 step: '01', 
                 icon: Mic,
                 text: 'Speak your question', 
-                mal: 'ചോദ്യം ചോദിക്കൂ',
-                desc: 'Simply tap the microphone and ask your farming doubts in Malayalam or English.'
+                desc: 'Simply tap the microphone and ask your farming doubts.'
               },
               { 
                 step: '02', 
                 icon: Zap,
                 text: 'AI Analysis', 
-                mal: 'AI ഉത്തരം തിരയുന്നു',
                 desc: 'Our advanced models process your query and search through verified agricultural data.'
               },
               { 
                 step: '03', 
                 icon: Play,
                 text: 'Instant Answer', 
-                mal: 'ഉത്തരം കേൾക്കൂ',
-                desc: 'Get clear, actionable advice instantly, read aloud in your preferred language.'
+                desc: 'Get clear, actionable advice instantly, read aloud to you.'
               },
             ].map((item, idx) => (
               <motion.div 
@@ -349,7 +309,6 @@ const HomePage = () => {
                 </div>
                 <div className="mb-2 text-sm font-black tracking-widest uppercase text-emerald-600">{item.step}</div>
                 <h3 className="mb-3 text-2xl font-bold text-slate-900">{item.text}</h3>
-                <p className="mb-6 font-bold text-emerald-600 font-malayalam">{item.mal}</p>
                 <p className="max-w-xs leading-relaxed text-slate-500">{item.desc}</p>
               </motion.div>
             ))}
@@ -371,8 +330,8 @@ const HomePage = () => {
                 Government Verified Data
               </div>
               <h3 className="mb-8 text-5xl font-black leading-tight text-white md:text-7xl">Free for all Kerala farmers</h3>
-              <p className="mb-16 text-2xl font-medium text-emerald-200 font-malayalam">
-                എല്ലാ കേരള കർഷകർക്കും ഈ സേവനം തികച്ചും സൗജന്യമാണ്.
+              <p className="mb-16 text-2xl font-medium text-emerald-200">
+                This service is completely free for all Kerala farmers.
               </p>
               <div className="flex flex-col justify-center gap-6 sm:flex-row">
                 <Link to="/register" className="px-12 py-6 text-xl font-black transition-all bg-white shadow-2xl text-emerald-900 rounded-2xl hover:bg-emerald-50 hover:-translate-y-1">
@@ -386,57 +345,6 @@ const HomePage = () => {
           </div>
         </div>
       </section>
-      
-      
-      {/* <footer className="py-24 bg-slate-950 text-slate-500">
-        <div className="page-container">
-          <div className="grid grid-cols-1 gap-16 mb-20 md:grid-cols-4">
-            <div className="col-span-1 md:col-span-2">
-              <div className="flex items-center gap-3 mb-8 text-3xl font-black text-white">
-                <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-emerald-600">
-                  <Sprout className="text-white" />
-                </div>
-                KrishiAI
-              </div>
-              <p className="max-w-md mb-10 text-lg leading-relaxed">
-                Dedicated to modernizing agriculture in Kerala through accessible AI technology, real-time data, and community-driven insights.
-              </p>
-              <div className="flex gap-4">
-                {[1, 2, 3, 4].map(i => (
-                  <div key={i} className="flex items-center justify-center w-12 h-12 transition-all border cursor-pointer rounded-xl bg-slate-900 border-slate-800 hover:bg-emerald-600 hover:border-emerald-600 group">
-                    <Users className="w-5 h-5 group-hover:text-white" />
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div>
-              <h4 className="mb-8 text-sm font-black tracking-widest text-white uppercase">Quick Links</h4>
-              <ul className="space-y-4 font-bold">
-                <li><Link to="/about" className="transition-colors hover:text-emerald-500">About Us</Link></li>
-                <li><Link to="/privacy" className="transition-colors hover:text-emerald-500">Privacy Policy</Link></li>
-                <li><Link to="/terms" className="transition-colors hover:text-emerald-500">Terms of Service</Link></li>
-                <li><Link to="/contact" className="transition-colors hover:text-emerald-500">Contact</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="mb-8 text-sm font-black tracking-widest text-white uppercase">Services</h4>
-              <ul className="space-y-4 font-bold">
-                <li><Link to="/scan" className="transition-colors hover:text-emerald-500">Disease Detection</Link></li>
-                <li><Link to="/dashboard" className="transition-colors hover:text-emerald-500">Weather Advisory</Link></li>
-                <li><Link to="/tracker" className="transition-colors hover:text-emerald-500">Market Prices</Link></li>
-                <li><Link to="/voice" className="transition-colors hover:text-emerald-500">Voice Assistant</Link></li>
-              </ul>
-            </div>
-          </div>
-          <div className="flex flex-col items-center justify-between gap-6 pt-12 text-sm border-t border-slate-900 md:flex-row">
-            <p>© {new Date().getFullYear()} KrishiAI. All rights reserved. Made with ❤️ for Kerala.</p>
-            <div className="flex gap-8">
-              <span className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-500" /> Systems Operational</span>
-              <span>v2.4.0</span>
-            </div>
-          </div>
-        </div>
-      </footer> */}
     </div>
   );
 };

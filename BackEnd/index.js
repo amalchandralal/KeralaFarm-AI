@@ -23,11 +23,14 @@ app.use(cookieParser());
 app.use("/uploads", express.static(__dirname + "/uploads"));
 
 // -------------------- ROUTES --------------------
-app.use("/", authRoutes);
-app.use("/upload", uploadRoutes);
-app.use("/", aiRoutes);
-app.use("/", apiRoutes);
-
+// app.use("/", authRoutes);
+// app.use("/upload", uploadRoutes);
+// app.use("/", aiRoutes);
+// app.use("/", apiRoutes);
+app.use("/api", authRoutes);   // Changed from /
+app.use("/api/upload", uploadRoutes);
+app.use("/api", aiRoutes);     // Changed from /
+app.use("/api", apiRoutes);    // THIS IS THE ONE: Now it matches /api/places
 // -------------------- SERVER --------------------
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
