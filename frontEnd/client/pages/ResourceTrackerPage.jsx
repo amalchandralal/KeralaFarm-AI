@@ -12,7 +12,8 @@ const SCHEMES = [
 const CATEGORIES = ['fertilizer', 'pesticide', 'labor', 'seed', 'equipment', 'other']
 const UNITS = ['kg', 'L', 'bags', 'days', 'nos', 'acres']
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+const API = apiBase.endsWith('/api') ? apiBase : apiBase.replace(/\/$/, '') + '/api'
 
 export default function ResourceTrackerPage() {
   const [tab, setTab] = useState('inputs')
