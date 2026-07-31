@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Download, 
   Trash2, 
@@ -15,101 +15,25 @@ import {
   Banana,
   Leaf,
   CalendarDays,
-  Globe
+  Globe,
+  Camera,
+  Mic,
+  FileText
 } from 'lucide-react';
 
-const GUIDES = [
-  {
-    id: 'paddy-pest',
-    title: 'Paddy Pest Management',
-    category: 'Pest Control',
-    icon: Wheat,
-    size: '120 KB',
-    content: [
-      'Stem Borer: Apply Chlorpyrifos 2.5ml per liter of water. Spray at evening.',
-      'Leaf Folder: Use Monocrotophos 1.6ml/L. Avoid spraying during flowering.',
-      'Blast Disease: Apply Tricyclazole 0.6g/L or Isoprothiolane 1.5ml/L.',
-      'Brown Plant Hopper: Drain field for 3-4 days. Apply Buprofezin 1ml/L.',
-      'Spray Schedule: First spray at 30 days, second at 60 days after transplanting.',
-      'Safety: Wear gloves and mask. Do not spray before rain.',
-    ]
-  },
-  {
-    id: 'coconut-care',
-  title: 'Coconut Tree Care Guide',
-  category: 'Crop Care',
-  icon: TreePalm,
-  size: '95 KB',
-  content: [
-      'Fertilizer: Apply 1.3 kg Urea + 2 kg Super Phosphate + 3.5 kg MOP per tree per year.',
-      'Rhinoceros Beetle: Fill crown with sand + Naphthalene balls. Apply Carbaryl dust.',
-      'Bud Rot: Apply Bordeaux mixture (1%) to crown during monsoon. Repeat monthly.',
-      'Irrigation: 200 liters per tree per week in summer. Reduce in monsoon.',
-      'Pruning: Remove dead fronds regularly. Keep 30-35 green fronds on tree.',
-      'Intercropping: Banana, pepper, or cocoa can be grown under coconut trees.',
-    ]
-  },
-  {
-    id: 'banana-guide',
-    title: 'Banana Cultivation Guide',
-    category: 'Crop Guide',
-    icon: Banana,
-    size: '88 KB',
-    content: [
-      'Planting: Use disease-free suckers. Plant at 1.8m × 1.8m spacing.',
-      'Panama Wilt: No chemical cure. Remove infected plants. Use Grandnaine variety.',
-      'Sigatoka: Spray Mancozeb 2g/L or Propiconazole 1ml/L at 3-week intervals.',
-      'Fertilizer: 200g Urea + 200g MOP at planting. Repeat at 3 and 6 months.',
-      'Propping: Support plants with bamboo poles at flowering stage.',
-      'Harvest: Harvest when fingers are full and angular. Takes 11-14 months.',
-    ]
-  },
-  {
-    id: 'organic-farming',
-    title: 'Organic Farming Basics',
-    category: 'Organic',
-    icon: Leaf,
-    size: '110 KB',
-    content: [
-      'Compost: Mix green waste + dry waste (1:1). Turn weekly. Ready in 45-60 days.',
-      'Vermicompost: Use earthworms with kitchen waste. Produces in 30-45 days.',
-      'Neem Oil Spray: Mix 5ml neem oil + 1g soap in 1L water. Controls most pests.',
-      'Jeevamrut: Mix 10L cow urine + 10kg dung + 2kg jaggery + 2kg pulse flour in 200L water.',
-      'Green Manure: Grow Sunhemp or Dhaincha and incorporate before flowering.',
-      'Crop Rotation: Rotate legume crops with non-legume to maintain soil health.',
-    ]
-  },
-  {
-    id: 'weather-farming',
-    title: 'Kerala Season Farming Calendar',
-    category: 'Planning',
-    icon: CalendarDays,
-    size: '75 KB',
-    content: [
-      'Kharif (Jun-Sep): Paddy, Tapioca, Ginger, Turmeric planting season.',
-      'Rabi (Oct-Jan): Vegetables, Pulses, Groundnut cultivation.',
-      'Summer (Feb-May): Irrigation-dependent crops. Good for watermelon, cucumber.',
-      'Pre-Monsoon (Apr-May): Land preparation, applying lime, basal fertilizer.',
-      'Post-Harvest (Oct-Nov): Store paddy at <14% moisture. Use proper bins.',
-      'Flood Preparedness: Keep drainage channels clear. Harvest before heavy rain.',
-    ]
-  },
-  {
-    id: 'soil-health',
-    title: 'Soil Health Management',
-    category: 'Soil',
-    icon: Globe,
-    size: '102 KB',
-    content: [
-      'Soil Testing: Test every 3 years. Send samples to Krishi Bhavan lab (free).',
-      'Lime Application: Apply 250-500 kg/acre if pH < 5.5. Mix well before planting.',
-      'Organic Matter: Add 10 tonnes FYM per acre every year before monsoon.',
-      'Drainage: Poor drainage causes root rot. Create raised beds in waterlogged areas.',
-      'Cover Crops: Grow legumes (cowpea, groundnut) during off-season to fix nitrogen.',
-      'Avoid: Over-plowing, burning crop residues, excess chemical fertilizer.',
-    ]
-  },
-];
+const getIcon = (iconName) => {
+  const icons = {
+    'Wheat': Wheat,
+    'TreePalm': TreePalm,
+    'Banana': Banana,
+    'Leaf': Leaf,
+    'CalendarDays': CalendarDays,
+    'Globe': Globe,
+    'Camera': Camera,
+    'Mic': Mic
+  };
+  return icons[iconName] || FileText;
+};
 
 export default function OfflinePage() {
   const [downloaded, setDownloaded] = useState(() => {
@@ -121,9 +45,22 @@ export default function OfflinePage() {
       return new Set();
     }
   });
+  
+  const [customGuides, setCustomGuides] = useState([]);
   const [openGuide, setOpenGuide] = useState(null);
   const [search, setSearch] = useState('');
   const [downloading, setDownloading] = useState(null);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('custom_offline_guides');
+      if (stored) setCustomGuides(JSON.parse(stored));
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
+
+  const GUIDES = [...customGuides];
 
   const saveDownloaded = (ids) => {
     setDownloaded(ids);
@@ -132,19 +69,25 @@ export default function OfflinePage() {
 
   const handleDownload = (id) => {
     setDownloading(id);
-    // Simulate network delay
+    // Simulate network delay for caching
     setTimeout(() => {
       const newSet = new Set(downloaded);
       newSet.add(id);
       saveDownloaded(newSet);
       setDownloading(null);
-    }, 1000);
+    }, 800);
   };
 
   const handleRemove = (id) => {
     const newSet = new Set(downloaded);
     newSet.delete(id);
     saveDownloaded(newSet);
+
+    if (id.startsWith('custom-')) {
+      const updated = customGuides.filter(g => g.id !== id);
+      setCustomGuides(updated);
+      localStorage.setItem('custom_offline_guides', JSON.stringify(updated));
+    }
   };
 
   const filtered = GUIDES.filter(g =>
@@ -203,8 +146,8 @@ export default function OfflinePage() {
                   onClick={() => setOpenGuide(isOpen ? null : guide.id)}
                 >
                   <div className="flex items-center gap-4">
-                    <div className="flex items-center justify-center w-12 h-12 bg-gray-50 rounded-lg text-emerald-600 border border-gray-100">
-                      <Icon size={24} />
+                    <div className="flex items-center justify-center w-12 h-12 bg-gray-50 rounded-lg text-emerald-600 border border-gray-100 shrink-0">
+                      {React.createElement(getIcon(guide.iconName), { size: 24 })}
                     </div>
                     <div>
                       <div className="flex items-center gap-2 mb-1">
@@ -225,27 +168,37 @@ export default function OfflinePage() {
                   </div>
 
                   <div className="flex items-center justify-end gap-3" onClick={e => e.stopPropagation()}>
-                    {isDownloaded ? (
-                      <button 
-                        onClick={() => handleRemove(guide.id)}
-                        className="p-2 text-gray-400 transition-colors rounded-md hover:bg-red-50 hover:text-red-600"
-                        title="Remove from offline"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleDownload(guide.id)}
-                        disabled={isDownloading}
-                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-emerald-700 bg-emerald-50 rounded-md hover:bg-emerald-100 transition-colors disabled:opacity-50"
-                      >
-                        {isDownloading ? (
-                          <><div className="w-4 h-4 border-2 rounded-full border-emerald-600 border-t-transparent animate-spin" /> Saving...</>
-                        ) : (
-                          <><Download size={16} /> Download</>
-                        )}
-                      </button>
-                    )}
+                    <button
+                      onClick={() => handleDownload(guide.id)}
+                      disabled={isDownloading || isDownloaded}
+                      className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                        isDownloaded 
+                          ? 'text-emerald-700 bg-emerald-100 opacity-80 cursor-default'
+                          : 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100 disabled:opacity-50'
+                      }`}
+                    >
+                      {isDownloading ? (
+                        <><div className="w-4 h-4 border-2 rounded-full border-emerald-600 border-t-transparent animate-spin" /> Saving...</>
+                      ) : isDownloaded ? (
+                        <><CheckCircle2 size={16} /> Downloaded</>
+                      ) : (
+                        <><Download size={16} /> Download</>
+                      )}
+                    </button>
+
+                    <button 
+                      onClick={() => handleRemove(guide.id)}
+                      disabled={!isDownloaded}
+                      className={`p-2 transition-colors rounded-md ${
+                        isDownloaded 
+                          ? 'text-red-600 bg-red-50 hover:bg-red-100' 
+                          : 'text-gray-300 bg-gray-50 opacity-50 cursor-not-allowed'
+                      }`}
+                      title="Remove from offline"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+
                     <button
                       onClick={() => setOpenGuide(isOpen ? null : guide.id)}
                       className="p-2 text-gray-400 transition-colors rounded-md hover:bg-gray-100"

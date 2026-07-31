@@ -1,6 +1,8 @@
 const axios = require("axios");
 const logger = require("../utils/logger");
 
+const GRAPHHOPPER_KEY = process.env.GRAPHHOPPER_KEY;
+const GH_GEOCODE_URL = "https://graphhopper.com/api/1/geocode";
 
 const haversineKm = (lat1, lon1, lat2, lon2) => {
   const R = 6371;
@@ -14,199 +16,157 @@ const haversineKm = (lat1, lon1, lat2, lon2) => {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 };
 
-// Small delay to respect Nominatim's rate-limit (1 req/sec)
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const nominatimGet = async (url, userAgent, retries = 3) => {
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    try {
-      const response = await axios.get(url, {
-        headers: {
-          "User-Agent": userAgent,
-          Accept: "application/json",
-        },
-        timeout: 10000,
-      });
-      return response;
-    } catch (err) {
-      const is429 = err.response && err.response.status === 429;
-      if (is429 && attempt < retries) {
-        const backoff = (attempt + 1) * 2000; // 2s, 4s, 6s
-        logger.warn(`Nominatim rate-limited (429). Retrying in ${backoff}ms...`);
-        await delay(backoff);
-        continue;
-      }
-      throw err;
-    }
+// GraphHopper: city name → coordinates
+const geocodeCity = async (cityName) => {
+  const res = await axios.get(GH_GEOCODE_URL, {
+    params: { q: `${cityName}, India`, locale: "en", limit: 1, key: GRAPHHOPPER_KEY },
+    timeout: 10000,
+  });
+  if (res.data?.hits?.length > 0) {
+    const hit = res.data.hits[0];
+    return { lat: hit.point.lat, lon: hit.point.lng, name: hit.city || hit.name || cityName };
   }
+  return null;
 };
 
-const buildSearchUrl = (q, opts = {}) => {
+// Nominatim: keyword search bounded to a viewbox
+const nominatimSearch = async (query, viewbox) => {
   const params = new URLSearchParams({
-    q,
+    q: query,
     format: "json",
     addressdetails: "1",
-    limit: opts.limit || "40",
+    limit: "20",
     countrycodes: "in",
   });
-
-  if (opts.viewbox) {
-    params.append("viewbox", opts.viewbox);
-    if (opts.bounded) params.append("bounded", "1");
+  if (viewbox) {
+    params.append("viewbox", viewbox);
+    params.append("bounded", "1");
   }
-
-  return `https://nominatim.openstreetmap.org/search?${params.toString()}`;
+  const url = `https://nominatim.openstreetmap.org/search?${params.toString()}`;
+  try {
+    const response = await axios.get(url, {
+      headers: { "User-Agent": "AgroVision_Farm_Assistant/2.0", Accept: "application/json" },
+      timeout: 10000,
+    });
+    return response.data || [];
+  } catch (err) {
+    if (err.response?.status === 429) {
+      await delay(3000);
+      try {
+        const retry = await axios.get(url, {
+          headers: { "User-Agent": "AgroVision_Farm_Assistant/2.0", Accept: "application/json" },
+          timeout: 10000,
+        });
+        return retry.data || [];
+      } catch { return []; }
+    }
+    logger.error(`Nominatim search failed for "${query}":`, err.message);
+    return [];
+  }
 };
 
 const getPlaces = async (req, res) => {
   try {
     const { lat, lon, city } = req.query;
-    const userAgent = "KeralaFarmAI_Assistant_System_v1";
+
+    if (!GRAPHHOPPER_KEY) {
+      return res.status(500).json({ error: "GraphHopper API key not configured." });
+    }
 
     let targetLat = lat ? parseFloat(lat) : NaN;
     let targetLon = lon ? parseFloat(lon) : NaN;
     let cityLabel = "";
-    let cityBoundingBox = null;
+    let isGPS = false;
 
+    // ── Resolve location ──────────────────────────────────
     if (city) {
-      const geoUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
-        city + ", India",
-      )}&format=json&limit=1&countrycodes=in`;
-
-      const geoRes = await nominatimGet(geoUrl, userAgent);
-
-      if (geoRes.data && geoRes.data.length > 0) {
-        targetLat = parseFloat(geoRes.data[0].lat);
-        targetLon = parseFloat(geoRes.data[0].lon);
-        cityLabel = geoRes.data[0].display_name.split(",")[0].trim();
-        cityBoundingBox = geoRes.data[0].boundingbox || null;
-      } else {
-        return res.status(404).json({ error: "City not found" });
-      }
+      const geo = await geocodeCity(city.trim());
+      if (!geo) return res.status(404).json({ error: `City "${city}" not found. Try a different spelling.` });
+      targetLat = geo.lat;
+      targetLon = geo.lon;
+      cityLabel = geo.name;
+    } else if (!isNaN(targetLat) && !isNaN(targetLon)) {
+      isGPS = true;
+    } else {
+      return res.status(400).json({ error: "Provide latitude/longitude or a city name." });
     }
 
-    if (!city && (isNaN(targetLat) || isNaN(targetLon))) {
-      return res.status(400).json({
-        error: "Please provide either latitude/longitude or a city for search.",
-      });
-    }
-
-    const bounding = cityBoundingBox
-      ? `${cityBoundingBox[2]},${cityBoundingBox[1]},${cityBoundingBox[3]},${cityBoundingBox[0]}`
-      : !isNaN(targetLat) && !isNaN(targetLon)
-        ? `${targetLon - 0.3},${targetLat + 0.3},${targetLon + 0.3},${targetLat - 0.3}`
-        : null;
-
-    const queries = cityLabel
-      ? [
-          `${cityLabel} Agriculture Office`,
-          `${cityLabel} Krishi Bhavan`,
-          `${cityLabel} Agriculture Department`,
-        ]
-      : [
-          "Agriculture Office India",
-          "Krishi Bhavan India",
-          "Agriculture Department India",
-        ];
-
+    // ── Collect results ───────────────────────────────────
     const results = [];
     const seen = new Set();
 
-    const saveResults = (items) => {
+    const collect = (items) => {
       if (!Array.isArray(items)) return;
-      items.forEach((item) => {
-        if (!item || !item.lat || !item.lon) return;
+      for (const item of items) {
+        if (!item?.lat || !item?.lon) continue;
         const id = item.place_id || `${item.osm_type}/${item.osm_id}`;
-        if (seen.has(id)) return;
+        if (seen.has(id)) continue;
         seen.add(id);
-
-        const name =
-          item.display_name?.split(",")[0] ||
-          item.name ||
-          "Agricultural Office";
+        const name = item.display_name?.split(",")[0] || "Agricultural Office";
         const address = item.display_name
           ? item.display_name.split(",").slice(1, 4).join(",").trim()
           : "Address not available";
-
-        results.push({
-          id,
-          name,
-          lat: parseFloat(item.lat),
-          lon: parseFloat(item.lon),
-          address,
-        });
-      });
+        results.push({ id, name, lat: parseFloat(item.lat), lon: parseFloat(item.lon), address });
+      }
     };
 
-    // Primary queries
-    for (const query of queries) {
-      const url = buildSearchUrl(query, {
-        viewbox: bounding,
-        bounded: Boolean(bounding),
-      });
-      try {
-        const response = await nominatimGet(url, userAgent);
-        saveResults(response.data);
-      } catch (innerError) {
-        logger.error(
-          `Nominatim search failed for "${query}":`,
-          innerError.message,
-        );
-      }
-      await delay(1100); // Respect Nominatim rate limit
-    }
+    const keywords = ["Krishi Bhavan", "Agriculture Office", "Agriculture Department"];
 
-    // Fallback queries if nothing found
-    if (results.length === 0) {
-      const fallbackQueries = cityLabel
-        ? [
-            `${cityLabel} Krishi Bhavan India`,
-            `${cityLabel} Agriculture Office India`,
-          ]
-        : ["Krishi Bhavan India", "Agriculture Office India"];
-
-      for (const query of fallbackQueries) {
-        try {
-          const response = await nominatimGet(
-            buildSearchUrl(query, { limit: "40" }),
-            userAgent,
-          );
-          saveResults(response.data);
-        } catch (innerError) {
-          logger.error(
-            `Fallback search failed for "${query}":`,
-            innerError.message,
-          );
+    if (isGPS) {
+      // GPS mode: bounding-box-only search — NO city text.
+      // Progressively widen: 0.3° (~33km) → 0.6° (~66km) → 1.0° (~111km)
+      for (const radius of [0.3, 0.6, 1.0]) {
+        if (results.length >= 4) break;
+        const box = `${targetLon - radius},${targetLat + radius},${targetLon + radius},${targetLat - radius}`;
+        for (const kw of keywords) {
+          const items = await nominatimSearch(kw, box);
+          collect(items);
+          await delay(1100);
+          if (results.length >= 6) break;
         }
+      }
+    } else {
+      // City text mode — 3 passes
+      const box30 = `${targetLon - 0.3},${targetLat + 0.3},${targetLon + 0.3},${targetLat - 0.3}`;
+      const box60 = `${targetLon - 0.6},${targetLat + 0.6},${targetLon + 0.6},${targetLat - 0.6}`;
+
+      // Pass 1: city + keyword inside 30km box
+      for (const kw of keywords) {
+        collect(await nominatimSearch(`${cityLabel} ${kw}`, box30));
         await delay(1100);
       }
+      // Pass 2: keyword only inside 30km box
+      if (results.length === 0) {
+        for (const kw of keywords) {
+          collect(await nominatimSearch(kw, box30));
+          await delay(1100);
+        }
+      }
+      // Pass 3: keyword only in wider 60km box
+      if (results.length === 0) {
+        for (const kw of keywords) {
+          collect(await nominatimSearch(kw, box60));
+          await delay(1100);
+        }
+      }
     }
 
+    // Sort by distance, cap at 6
     const sorted = results
-      .map((place) => ({
-        ...place,
-        distance: haversineKm(targetLat, targetLon, place.lat, place.lon),
-      }))
+      .map((p) => ({ ...p, distance: haversineKm(targetLat, targetLon, p.lat, p.lon) }))
       .sort((a, b) => a.distance - b.distance)
-      .slice(0, 11);
+      .slice(0, 6);
 
-    res.json({
-      places: sorted,
-      center: [targetLat, targetLon],
-    });
+    res.json({ places: sorted, center: [targetLat, targetLon] });
+
   } catch (error) {
     logger.error("Place Controller Error:", error.message);
-    if (error.response) {
-      logger.error("Response status:", error.response.status);
-      logger.error("Response data:", error.response.data);
-    }
-    if (error.code) {
-      logger.error("Error code:", error.code);
-    }
+    if (error.response) logger.error("Status:", error.response.status);
     res.status(500).json({
       error: "Backend failed to process request",
-      details:
-        process.env.NODE_ENV === "development" ? error.message : undefined,
+      details: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 };

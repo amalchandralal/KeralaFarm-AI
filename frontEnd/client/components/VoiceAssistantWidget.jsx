@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Mic, Square, Send, Loader2, Play, Pause, RotateCcw, VolumeX } from 'lucide-react';
+import { Mic, Square, Send, Loader2, Play, Pause, RotateCcw, VolumeX, Download } from 'lucide-react';
 import { useVoice } from '../hooks/useVoice';
 import { askVoiceAssistant } from '../services/api';
 
@@ -83,7 +83,33 @@ const VoiceAssistantWidget = () => {
     <div className="flex flex-col h-[600px] font-sans">
       
       {/* Chat History */}
-      <div className="flex-1 p-6 overflow-y-auto bg-gray-50">
+      <div className="flex-1 p-6 overflow-y-auto bg-gray-50 relative">
+        {messages.length > 1 && (
+          <div className="sticky top-0 z-10 flex justify-end mb-4">
+            <button
+              onClick={() => {
+                const guide = {
+                  id: `custom-voice-${Date.now()}`,
+                  title: `Voice Assistant Chat - ${new Date().toLocaleDateString()}`,
+                  category: 'Voice Assistant',
+                  iconName: 'Mic',
+                  size: 'Custom',
+                  content: messages.map(m => `${m.role === 'user' ? 'You' : 'AgroVision AI'}: ${m.content}`)
+                };
+                const custom = JSON.parse(localStorage.getItem('custom_offline_guides') || '[]');
+                localStorage.setItem('custom_offline_guides', JSON.stringify([guide, ...custom]));
+                
+                const downloaded = new Set(JSON.parse(localStorage.getItem('downloaded_guides') || '[]'));
+                downloaded.add(guide.id);
+                localStorage.setItem('downloaded_guides', JSON.stringify([...downloaded]));
+              }}
+              className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-md hover:bg-emerald-100 shadow-sm transition-colors"
+            >
+              <Download size={14} />
+              Save Chat Offline
+            </button>
+          </div>
+        )}
         <div className="space-y-6">
           {messages.map((msg) => (
             <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>

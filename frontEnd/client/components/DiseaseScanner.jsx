@@ -197,14 +197,40 @@ const DiseaseScanner = () => {
                 )}
               </div>
 
-              <div className="mt-6 pt-6 border-t border-gray-100">
+              <div className="mt-6 pt-6 border-t border-gray-100 flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={() => {
+                    const guide = {
+                      id: `custom-scan-${Date.now()}`,
+                      title: `Scan: ${result.disease_name || "Unknown Condition"}`,
+                      category: 'Scan Result',
+                      iconName: 'Camera',
+                      size: 'Custom',
+                      content: [
+                        `Confidence: ${(confNum).toFixed(1)}%`,
+                        result.suggested_treatment ? `Treatment: ${result.suggested_treatment}` : '',
+                        result.possible_causes ? `Causes: ${result.possible_causes}` : '',
+                        result.fertilizer_guidance ? `Fertilizer: ${result.fertilizer_guidance}` : ''
+                      ].filter(Boolean)
+                    };
+                    const custom = JSON.parse(localStorage.getItem('custom_offline_guides') || '[]');
+                    localStorage.setItem('custom_offline_guides', JSON.stringify([guide, ...custom]));
+                    
+                    const downloaded = new Set(JSON.parse(localStorage.getItem('downloaded_guides') || '[]'));
+                    downloaded.add(guide.id);
+                    localStorage.setItem('downloaded_guides', JSON.stringify([...downloaded]));
+                  }}
+                  className="flex-1 inline-flex items-center justify-center h-10 px-4 text-sm font-medium text-emerald-700 transition-colors bg-emerald-50 border border-emerald-200 rounded-md hover:bg-emerald-100"
+                >
+                  Save for Offline
+                </button>
                 <button
                   onClick={() => {
                     setImage(null);
                     setPreview("");
                     setResult(null);
                   }}
-                  className="w-full inline-flex items-center justify-center h-10 px-4 text-sm font-medium text-gray-700 transition-colors bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                  className="flex-1 inline-flex items-center justify-center h-10 px-4 text-sm font-medium text-gray-700 transition-colors bg-white border border-gray-300 rounded-md hover:bg-gray-50"
                 >
                   Scan Another Plant
                 </button>

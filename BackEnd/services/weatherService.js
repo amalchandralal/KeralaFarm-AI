@@ -24,19 +24,19 @@ const buildAlerts = ({ temp, humidity, windSpeed, rainfall, condition, clouds })
   const alerts = [];
 
   if (humidity > 80)
-    alerts.push({ icon: "🦟", title: "Stem Borer Alert", desc: "High humidity increases stem borer risk in paddy. Apply Chlorpyrifos 2.5ml/L if observed.", severity: "high" });
+    alerts.push({ icon: "bug", title: "Stem Borer Alert", desc: "High humidity increases stem borer risk in paddy. Apply Chlorpyrifos 2.5ml/L if observed.", severity: "high" });
   if (humidity > 75 && clouds > 60)
-    alerts.push({ icon: "🍂", title: "Blast Disease Risk", desc: "Cloudy and humid — ideal for rice blast. Use Tricyclazole spray preventively.", severity: "medium" });
+    alerts.push({ icon: "leaf", title: "Blast Disease Risk", desc: "Cloudy and humid — ideal for rice blast. Use Tricyclazole spray preventively.", severity: "medium" });
   if (condition === "Rain" || condition === "Thunderstorm" || rainfall > 10)
-    alerts.push({ icon: "💧", title: "Waterlogging Warning", desc: "Heavy rainfall detected. Ensure drainage channels are clear to prevent root rot.", severity: "high" });
+    alerts.push({ icon: "droplets", title: "Waterlogging Warning", desc: "Heavy rainfall detected. Ensure drainage channels are clear to prevent root rot.", severity: "high" });
   if (temp > 35)
-    alerts.push({ icon: "🌡️", title: "Heat Stress Alert", desc: `Temperature at ${Math.round(temp)}°C. Avoid field work 11am–3pm. Increase irrigation frequency.`, severity: "high" });
+    alerts.push({ icon: "thermometer-sun", title: "Heat Stress Alert", desc: `Temperature at ${Math.round(temp)}°C. Avoid field work 11am–3pm. Increase irrigation frequency.`, severity: "high" });
   if (windSpeed > 25)
-    alerts.push({ icon: "💨", title: "High Wind Warning", desc: `Wind at ${Math.round(windSpeed)} km/h. Avoid spraying — drift risk.`, severity: "medium" });
+    alerts.push({ icon: "wind", title: "High Wind Warning", desc: `Wind at ${Math.round(windSpeed)} km/h. Avoid spraying — drift risk.`, severity: "medium" });
   if (temp > 32 && humidity < 50 && condition === "Clear")
-    alerts.push({ icon: "🐛", title: "Rhinoceros Beetle Risk", desc: "Dry and hot — check coconut crown for beetle damage.", severity: "medium" });
+    alerts.push({ icon: "bug", title: "Rhinoceros Beetle Risk", desc: "Dry and hot — check coconut crown for beetle damage.", severity: "medium" });
   if (humidity > 80 && temp > 25 && (condition === "Rain" || condition === "Drizzle"))
-    alerts.push({ icon: "🌿", title: "Fungal Risk High", desc: "Wet and warm — apply copper fungicide to tomato and brinjal.", severity: "high" });
+    alerts.push({ icon: "leaf", title: "Fungal Risk High", desc: "Wet and warm — apply copper fungicide to tomato and brinjal.", severity: "high" });
 
   return alerts;
 };
@@ -45,19 +45,19 @@ const buildRecommendations = ({ temp, humidity, windSpeed, rainfall, condition, 
   const recommendations = [];
 
   if (condition === "Clouds" || clouds > 50)
-    recommendations.push({ icon: "🌱", text: "Good time to apply basal fertilizer to paddy before rain.", tag: "Fertilizer" });
+    recommendations.push({ icon: "sprout", text: "Good time to apply basal fertilizer to paddy before rain.", tag: "Fertilizer" });
   if (condition === "Rain" || condition === "Drizzle" || rainfall > 5)
-    recommendations.push({ icon: "🚿", text: `Skip irrigation today — natural rainfall of ${rainfall > 0 ? rainfall + "mm" : "rain"} expected.`, tag: "Water" });
+    recommendations.push({ icon: "droplets", text: `Skip irrigation today — natural rainfall of ${rainfall > 0 ? rainfall + "mm" : "rain"} expected.`, tag: "Water" });
   else if (temp > 35 && humidity < 40)
-    recommendations.push({ icon: "🚿", text: "Hot and dry — increase irrigation frequency to prevent crop wilting.", tag: "Water" });
+    recommendations.push({ icon: "droplets", text: "Hot and dry — increase irrigation frequency to prevent crop wilting.", tag: "Water" });
   if (rainfall > 15 || condition === "Thunderstorm")
-    recommendations.push({ icon: "📦", text: "Heavy rainfall detected. Harvest ripe vegetables now to avoid damage.", tag: "Harvest" });
+    recommendations.push({ icon: "package", text: "Heavy rainfall detected. Harvest ripe vegetables now to avoid damage.", tag: "Harvest" });
   if (humidity > 70 && (condition === "Clouds" || condition === "Drizzle"))
-    recommendations.push({ icon: "🌿", text: "Apply fungicide spray before forecast rainfall.", tag: "Pest Control" });
+    recommendations.push({ icon: "leaf", text: "Apply fungicide spray before forecast rainfall.", tag: "Pest Control" });
   if (condition === "Clear" && windSpeed < 15)
-    recommendations.push({ icon: "☀️", text: "Clear skies and calm wind — ideal conditions for pesticide or fertilizer spraying.", tag: "Pest Control" });
+    recommendations.push({ icon: "sun", text: "Clear skies and calm wind — ideal conditions for pesticide or fertilizer spraying.", tag: "Pest Control" });
   if (temp > 34)
-    recommendations.push({ icon: "🌡️", text: `High temperature (${Math.round(temp)}°C) — apply mulch around crops to retain soil moisture.`, tag: "Advisory" });
+    recommendations.push({ icon: "thermometer", text: `High temperature (${Math.round(temp)}°C) — apply mulch around crops to retain soil moisture.`, tag: "Advisory" });
 
   return recommendations;
 };
@@ -90,9 +90,9 @@ const fetchAQI = async (lat = 10.8505, lon = 76.2711) => {
 // ── Hourly Forecast ───────────────────────────────────────────────────────────
 
 const WEATHER_ICONS = {
-  Clear: "☀️", Clouds: "☁️", Rain: "🌧️",
-  Drizzle: "🌦️", Thunderstorm: "⛈️", Snow: "❄️",
-  Mist: "🌫️", Fog: "🌫️",
+  Clear: "sun", Clouds: "cloud", Rain: "cloud-rain",
+  Drizzle: "cloud-drizzle", Thunderstorm: "cloud-lightning", Snow: "snowflake",
+  Mist: "cloud-fog", Fog: "cloud-fog",
 };
 
 const fetchHourlyForecast = async (lat = 10.8505, lon = 76.2711) => {
@@ -122,7 +122,7 @@ const fetchHourlyForecast = async (lat = 10.8505, lon = 76.2711) => {
       time: new Date(h.dt * 1000).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true }),
       temp: h.main.temp,
       rain: h.rain?.["3h"] ?? 0,
-      icon: WEATHER_ICONS[h.weather[0].main] || "🌤️",
+      icon: WEATHER_ICONS[h.weather[0].main] || "sun",
       description: h.weather[0].description,
       pop:  h.pop ?? 0,
     }));

@@ -12,6 +12,14 @@ const SCHEMES = [
 const CATEGORIES = ['fertilizer', 'pesticide', 'labor', 'seed', 'equipment', 'other']
 const UNITS = ['kg', 'L', 'bags', 'days', 'nos', 'acres']
 
+const INDIAN_STATES = [
+  'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
+  'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka',
+  'Keralam', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram',
+  'Nagaland', 'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu',
+  'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal'
+];
+
 const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 const API = apiBase.endsWith('/api') ? apiBase : apiBase.replace(/\/$/, '') + '/api'
 
@@ -34,6 +42,7 @@ export default function ResourceTrackerPage() {
   const [marketPrices, setMarketPrices] = useState([])
   const [marketLoading, setMarketLoading] = useState(false)
   const [marketError, setMarketError] = useState('')
+  const [selectedState, setSelectedState] = useState('Keralam')
 
   // ── Load input entries ──
   useEffect(() => {
@@ -56,7 +65,7 @@ export default function ResourceTrackerPage() {
     setMarketLoading(true);
     setMarketError('');
 
-    fetch(`${API}/market-prices`, { credentials: 'include' })
+    fetch(`${API}/market-prices?state=${encodeURIComponent(selectedState)}`, { credentials: 'include' })
       .then(async (r) => {
         const data = await r.json().catch(() => null);
 
@@ -76,7 +85,7 @@ export default function ResourceTrackerPage() {
         setMarketError(err.message || 'Network error. Please try again.');
       })
       .finally(() => setMarketLoading(false));
-  }, [tab]);
+  }, [tab, selectedState]);
 
   // ── Add entry ──
   const addEntry = async () => {
@@ -338,11 +347,23 @@ export default function ResourceTrackerPage() {
       {/* ── MARKET PRICES TAB ── */}
       {tab === 'market' && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Kerala APMC Prices</h2>
-            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-50 text-emerald-700">
-              Live Updates
-            </span>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-4">
+            <div className="flex items-center gap-3">
+              <h2 className="text-lg font-semibold text-gray-900">APMC Market Prices</h2>
+              <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-50 text-emerald-700">
+                Live Updates
+              </span>
+            </div>
+            
+            <select
+              value={selectedState}
+              onChange={(e) => setSelectedState(e.target.value)}
+              className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none bg-white cursor-pointer min-w-[180px]"
+            >
+              {INDIAN_STATES.map(state => (
+                <option key={state} value={state}>{state}</option>
+              ))}
+            </select>
           </div>
 
           {marketError && (

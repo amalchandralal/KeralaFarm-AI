@@ -214,16 +214,16 @@ export default function PlacesPage() {
 
           {/* Results Section (40%) */}
           <div className="w-full lg:w-[40%] flex flex-col h-full bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-            <div className="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
-              <h2 className="font-semibold text-gray-900">
-                Nearby Results {places.length > 0 && `(${places.length})`}
+            <div className="px-4 py-3 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+              <h2 className="text-sm font-semibold text-gray-900">
+                {places.length > 0 ? `Nearest ${places.length} Offices` : 'Nearby Results'}
               </h2>
               {loading && (
                 <div className="w-5 h-5 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
               )}
             </div>
             
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div className="flex-1 overflow-y-auto p-3 space-y-2">
               {!loading && places.length === 0 ? (
                 <div className="text-center py-12">
                   <Info className="mx-auto mb-3 text-gray-400" size={32} />
