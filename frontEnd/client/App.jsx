@@ -35,7 +35,7 @@ const App = () => {
               <Route path="/profile"      element={<ProfilePage />} />
               <Route path="/places"       element={<PlacesPage />} />
               <Route path="/bookings"     element={<BookingsPage />} />
-              <Route path="/bookings/new" element={<BookingsPage />} />
+
               <Route path="*"             element={<NotFoundPage />} />
             </Routes>
           </main>

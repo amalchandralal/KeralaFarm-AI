@@ -2,6 +2,22 @@ const axios = require("axios");
 
 const OWM_KEY = process.env.WEATHER_KEY;
 
+const cache = new Map();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+function getCached(key) {
+  const entry = cache.get(key);
+  if (entry && Date.now() - entry.timestamp < CACHE_TTL) {
+    return entry.data;
+  }
+  cache.delete(key);
+  return null;
+}
+
+function setCache(key, data) {
+  cache.set(key, { data, timestamp: Date.now() });
+}
+
 // ── Alert & Recommendation builders ──────────────────────────────────────────
 
 const buildAlerts = ({ temp, humidity, windSpeed, rainfall, condition, clouds }) => {
@@ -51,6 +67,10 @@ const buildRecommendations = ({ temp, humidity, windSpeed, rainfall, condition, 
 const AQI_LABELS = ["Good", "Fair", "Moderate", "Poor", "Very Poor"];
 
 const fetchAQI = async (lat = 10.8505, lon = 76.2711) => {
+  const cacheKey = `fetchAQI_${Number(lat).toFixed(2)}_${Number(lon).toFixed(2)}`;
+  const cached = getCached(cacheKey);
+  if (cached) return cached;
+
   const res = await axios.get(
     `https://api.openweathermap.org/data/2.5/air_pollution`,
     { params: { lat, lon, appid: OWM_KEY } }
@@ -58,11 +78,13 @@ const fetchAQI = async (lat = 10.8505, lon = 76.2711) => {
   const item      = res.data.list[0];
   const aqiIndex  = item.main.aqi;
   const aqiValue  = [25, 75, 125, 200, 350][aqiIndex - 1] || 50;
-  return {
+  const data = {
     aqi:        aqiValue,
     label:      AQI_LABELS[aqiIndex - 1] || "Unknown",
     components: item.components,
   };
+  setCache(cacheKey, data);
+  return data;
 };
 
 // ── Hourly Forecast ───────────────────────────────────────────────────────────
@@ -74,6 +96,10 @@ const WEATHER_ICONS = {
 };
 
 const fetchHourlyForecast = async (lat = 10.8505, lon = 76.2711) => {
+  const cacheKey = `fetchHourlyForecast_${Number(lat).toFixed(2)}_${Number(lon).toFixed(2)}`;
+  const cached = getCached(cacheKey);
+  if (cached) return cached;
+
   const [openMeteoRes, owmRes] = await Promise.allSettled([
     axios.get(
       `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=uv_index&timezone=Asia%2FKolkata&forecast_days=1`
@@ -102,7 +128,9 @@ const fetchHourlyForecast = async (lat = 10.8505, lon = 76.2711) => {
     }));
   }
 
-  return { current: { uvi: currentUVI }, hourly: hourlySlots };
+  const data = { current: { uvi: currentUVI }, hourly: hourlySlots };
+  setCache(cacheKey, data);
+  return data;
 };
 
 module.exports = { buildAlerts, buildRecommendations, fetchAQI, fetchHourlyForecast };

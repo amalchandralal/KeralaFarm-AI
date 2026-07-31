@@ -1,8 +1,6 @@
 const axios = require("axios");
-const https = require("https");
+const logger = require("../utils/logger");
 
-// Required: user's network/proxy injects a self-signed certificate into HTTPS
-const tlsAgent = new https.Agent({ rejectUnauthorized: false });
 
 const haversineKm = (lat1, lon1, lat2, lon2) => {
   const R = 6371;
@@ -27,7 +25,6 @@ const nominatimGet = async (url, userAgent, retries = 3) => {
           "User-Agent": userAgent,
           Accept: "application/json",
         },
-        httpsAgent: tlsAgent,
         timeout: 10000,
       });
       return response;
@@ -35,7 +32,7 @@ const nominatimGet = async (url, userAgent, retries = 3) => {
       const is429 = err.response && err.response.status === 429;
       if (is429 && attempt < retries) {
         const backoff = (attempt + 1) * 2000; // 2s, 4s, 6s
-        console.log(`Nominatim rate-limited (429). Retrying in ${backoff}ms...`);
+        logger.warn(`Nominatim rate-limited (429). Retrying in ${backoff}ms...`);
         await delay(backoff);
         continue;
       }
@@ -151,7 +148,7 @@ const getPlaces = async (req, res) => {
         const response = await nominatimGet(url, userAgent);
         saveResults(response.data);
       } catch (innerError) {
-        console.error(
+        logger.error(
           `Nominatim search failed for "${query}":`,
           innerError.message,
         );
@@ -176,7 +173,7 @@ const getPlaces = async (req, res) => {
           );
           saveResults(response.data);
         } catch (innerError) {
-          console.error(
+          logger.error(
             `Fallback search failed for "${query}":`,
             innerError.message,
           );
@@ -198,13 +195,13 @@ const getPlaces = async (req, res) => {
       center: [targetLat, targetLon],
     });
   } catch (error) {
-    console.error("Place Controller Error:", error.message);
+    logger.error("Place Controller Error:", error.message);
     if (error.response) {
-      console.error("Response status:", error.response.status);
-      console.error("Response data:", error.response.data);
+      logger.error("Response status:", error.response.status);
+      logger.error("Response data:", error.response.data);
     }
     if (error.code) {
-      console.error("Error code:", error.code);
+      logger.error("Error code:", error.code);
     }
     res.status(500).json({
       error: "Backend failed to process request",

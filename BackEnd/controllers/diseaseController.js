@@ -1,6 +1,7 @@
 const fs = require("fs");
 const genAI = require("../config/gemini");
 const { DISEASE_SCHEMA } = require("../utils/constants");
+const logger = require("../utils/logger");
 
 const detectDisease = async (req, res) => {
   try {
@@ -28,7 +29,7 @@ const detectDisease = async (req, res) => {
     fs.unlinkSync(req.file.path);
     res.json(jsonResponse);
   } catch (err) {
-    console.error("Gemini Error:", err.message);
+    logger.error(`Gemini Error: ${err.message}`);
     res.status(500).json({ error: "Failed to analyze image. Please try again." });
   }
 };

@@ -2,31 +2,32 @@ const jwt = require("jsonwebtoken");
 const { JWT_SECRET } = require("../utils/constants");
 
 /**
- * Resolves user data from JWT cookie.
- * Use as a utility in controllers rather than a route middleware,
- * to keep the same behaviour as the original code.
+ * Synchronously verifies a JWT token and returns the decoded payload.
+ * Returns null if the token is missing or invalid.
  */
-const getUserFromToken = (req) => {
-  return new Promise((resolve, reject) => {
-    const { token } = req.cookies;
-    if (!token) return reject(new Error("Not logged in"));
-    jwt.verify(token, JWT_SECRET, {}, (err, userData) => {
-      if (err) return reject(err);
-      resolve(userData);
-    });
-  });
-};
+function getUserFromToken(token) {
+  if (!token) return null;
+  try {
+    return jwt.verify(token, JWT_SECRET);
+  } catch {
+    return null;
+  }
+}
 
 /**
- * Express middleware that attaches userData to req or returns 401.
+ * Express middleware that extracts the JWT from cookies or Authorization header,
+ * verifies it, and attaches the decoded payload to req.userData.
+ * Returns 401 if the token is missing or invalid.
  */
-const requireAuth = async (req, res, next) => {
-  try {
-    req.userData = await getUserFromToken(req);
-    next();
-  } catch {
-    res.status(401).json({ error: "Not authenticated" });
+function requireAuth(req, res, next) {
+  const token =
+    req.cookies?.token || req.headers.authorization?.split(" ")[1];
+  const userData = getUserFromToken(token);
+  if (!userData) {
+    return res.status(401).json({ error: "Authentication required" });
   }
-};
+  req.userData = userData;
+  next();
+}
 
 module.exports = { getUserFromToken, requireAuth };

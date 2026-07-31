@@ -1,5 +1,6 @@
 const axios = require("axios")
 const { buildAlerts, buildRecommendations, fetchAQI, fetchHourlyForecast } = require("../services/weatherService")
+const logger = require("../utils/logger")
 
 const DEFAULT_LAT = 10.8505
 const DEFAULT_LON = 76.2711
@@ -41,7 +42,7 @@ const getDashboard = async (req, res) => {
       location: { lat, lon, isDefault, name: w.name },
     })
   } catch (err) {
-    console.error("Dashboard weather error:", err.response?.data || err.message)
+    logger.error(`Dashboard weather error: ${JSON.stringify(err.response?.data) || err.message}`)
     res.status(500).json({ error: "Weather API failed" })
   }
 }
@@ -52,7 +53,7 @@ const getAQI = async (req, res) => {
     const data = await fetchAQI(lat, lon)
     res.json(data)
   } catch (err) {
-    console.error("AQI error:", err.message)
+    logger.error(`AQI error: ${err.message}`)
     res.status(500).json({ error: "Failed to fetch AQI data" })
   }
 }
@@ -63,7 +64,7 @@ const getHourlyForecast = async (req, res) => {
     const data = await fetchHourlyForecast(lat, lon)
     res.json(data)
   } catch (err) {
-    console.error("Hourly forecast error:", err.message)
+    logger.error(`Hourly forecast error: ${err.message}`)
     res.status(500).json({ error: "Failed to fetch hourly forecast" })
   }
 }

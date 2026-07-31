@@ -1,26 +1,40 @@
-
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, Square, Send, Loader2, Globe } from 'lucide-react';
-import { useVoice } from '../hooks/useVoice'; // Adjust path
-import { askVoiceAssistant } from '../services/api'; // Adjust path
+import React, { useState, useRef, useEffect } from 'react';
+import { Mic, Square, Send, Loader2, Play, Pause, RotateCcw, VolumeX } from 'lucide-react';
+import { useVoice } from '../hooks/useVoice';
+import { askVoiceAssistant } from '../services/api';
 
 const LANG = 'en-IN';
 
 const VoiceAssistantWidget = () => {
   const [inputText, setInputText] = useState('');
-  const [response, setResponse] = useState('');
+  const [messages, setMessages] = useState([
+    { id: '1', role: 'ai', content: 'Hello! I am your AgroVision assistant. How can I help you today?' }
+  ]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
+  const chatEndRef = useRef(null);
 
-  // Initialize Voice Hook
-  const { 
+  const scrollToBottom = () => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isProcessing]);
+
+  const {
     isListening, 
+    isSpeaking,
+    isPaused,
+    hasSpokenText,
     interimText, 
     startListening, 
     stopListening, 
     speak, 
-    stopSpeaking 
+    stopSpeaking,
+    pauseSpeaking,
+    resumeSpeaking,
+    replaySpeaking
   } = useVoice({
     lang: LANG,
     onResult: (text) => handleTranscriptionComplete(text),
@@ -31,13 +45,19 @@ const VoiceAssistantWidget = () => {
   });
 
   const handleTranscriptionComplete = async (text) => {
-    if (!text) return;
+    if (!text.trim()) return;
+    
+    // Add user message
+    const userMsgId = Date.now().toString();
+    setMessages(prev => [...prev, { id: userMsgId, role: 'user', content: text }]);
+    
     setIsProcessing(true);
-    setResponse("");
+    setError("");
     
     try {
       const data = await askVoiceAssistant(text);
-      setResponse(data.answer);
+      const aiMsgId = (Date.now() + 1).toString();
+      setMessages(prev => [...prev, { id: aiMsgId, role: 'ai', content: data.answer }]);
       speak(data.answer, LANG);
     } catch (err) {
       setError("Failed to get response. Try again.");
@@ -52,130 +72,156 @@ const VoiceAssistantWidget = () => {
     setInputText('');
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleManualSend();
+    }
+  };
+
   return (
-    <div className="w-full max-w-md p-4 mx-auto">
-      <div className="bg-white rounded-[3rem] p-8 shadow-2xl border border-slate-100 relative overflow-hidden min-h-[550px] flex flex-col">
-        
-        {/* Interaction Area */}
-        <div className="flex flex-col items-center justify-center flex-grow">
-          <AnimatePresence mode="wait">
-            {isProcessing ? (
-              <motion.div 
-                key="processing"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                className="flex flex-col items-center gap-4"
-              >
-                <div className="relative">
-                  <div className="absolute inset-0 rounded-full bg-emerald-100 animate-ping opacity-20" />
-                  <Loader2 className="w-16 h-16 text-emerald-600 animate-spin" />
-                </div>
-                <p className="text-sm font-bold tracking-widest uppercase text-emerald-600 animate-pulse">
-                  Analyzing Question...
-                </p>
-              </motion.div>
-            ) : (
-              <motion.div 
-                key="idle"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                className="flex flex-col items-center w-full text-center"
-              >
-                {/* Mic Button - Matches Image */}
-                <button 
-                  onClick={isListening ? stopListening : startListening}
-                  className={`
-                    relative h-32 w-32 rounded-full flex items-center justify-center transition-all duration-500 mb-6
-                    ${isListening 
-                      ? 'bg-red-500 shadow-[0_0_40px_rgba(239,68,68,0.4)]' 
-                      : 'bg-emerald-500 shadow-[0_0_40px_rgba(16,185,129,0.3)] hover:scale-105'}
-                  `}
-                >
-                  {isListening && (
-                    <div className="absolute inset-0 border-4 rounded-full border-white/30 animate-ping" />
-                  )}
-                  {isListening ? (
-                    <Square className="w-10 h-10 text-white fill-current" />
-                  ) : (
-                    <Mic className="w-12 h-12 text-white" />
-                  )}
-                </button>
+    <div className="flex flex-col h-[600px] font-sans">
+      
+      {/* Chat History */}
+      <div className="flex-1 p-6 overflow-y-auto bg-gray-50">
+        <div className="space-y-6">
+          {messages.map((msg) => (
+            <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm ${
+                msg.role === 'user' 
+                  ? 'bg-emerald-50 text-emerald-900 border border-emerald-100' 
+                  : 'bg-white text-gray-800 border border-gray-200 shadow-sm'
+              }`}>
+                {msg.content}
+              </div>
+            </div>
+          ))}
+          
+          {/* Interim text preview */}
+          {isListening && interimText && (
+            <div className="flex justify-end">
+              <div className="max-w-[80%] rounded-2xl px-4 py-3 text-sm bg-emerald-50/50 text-emerald-700/70 border border-emerald-100/50 italic">
+                {interimText}...
+              </div>
+            </div>
+          )}
 
-                <p className="flex items-center justify-center gap-2 text-sm text-slate-500">
-                  {isListening ? (
-                    <span className="font-medium text-red-500 animate-pulse">Listening to you...</span>
-                  ) : (
-                    <>Tap <Mic size={14} className="text-emerald-600" /> to speak your farming question</>
-                  )}
-                </p>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Transcript / Response Display */}
-          <div className="w-full mt-6 space-y-4">
-            {/* Real-time transcription preview */}
-            {isListening && interimText && (
-              <p className="text-sm italic text-center text-slate-400">"{interimText}..."</p>
-            )}
-
-            {/* Error Message */}
-            {error && <p className="text-xs text-center text-red-500">{error}</p>}
-
-            {/* Final AI Response Bubble - EXACT MATCH TO SCREENSHOT */}
-            {response && !isProcessing && (
-              <motion.div 
-                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                className="bg-[#059669] text-white p-5 rounded-2xl shadow-lg shadow-emerald-100 relative"
-              >
-                <p className="text-sm leading-relaxed">{response}</p>
-                {/* Speech Control */}
-                <button 
-                    onClick={stopSpeaking} 
-                    className="absolute p-1 bg-white border rounded-full shadow-md -top-2 -right-2 text-emerald-600"
-                >
-                    <X size={12}/>
-                </button>
-              </motion.div>
-            )}
-          </div>
+          {/* Loading indicator */}
+          {isProcessing && (
+            <div className="flex justify-start">
+              <div className="flex items-center gap-2 max-w-[80%] rounded-2xl px-4 py-3 text-sm bg-white text-gray-500 border border-gray-200 shadow-sm">
+                <Loader2 size={16} className="animate-spin text-emerald-600" />
+                Thinking...
+              </div>
+            </div>
+          )}
+          
+          {error && (
+            <div className="flex justify-center my-2">
+              <span className="text-xs font-medium text-red-500 bg-red-50 px-3 py-1 rounded-full">{error}</span>
+            </div>
+          )}
+          
+          <div ref={chatEndRef} />
         </div>
+      </div>
 
-        {/* Form Bottom Section */}
-        <div className="mt-8">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="flex-grow h-px bg-slate-100" />
-            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-300">or type your question</span>
-            <div className="flex-grow h-px bg-slate-100" />
-          </div>
+      {/* Input Area */}
+      <div className="p-4 bg-white border-t border-gray-200">
+        <div className="flex items-center gap-3 max-w-2xl mx-auto">
+          
+          {/* Mic Button */}
+          <button 
+            onClick={isListening ? stopListening : startListening}
+            className={`flex-shrink-0 flex items-center justify-center w-14 h-14 rounded-full transition-all ${
+              isListening 
+                ? 'bg-red-50 text-red-600 shadow-sm border border-red-100' 
+                : 'bg-emerald-600 text-white shadow-sm hover:bg-emerald-700'
+            }`}
+            title={isListening ? "Stop listening" : "Start listening"}
+          >
+            {isListening ? (
+              <Square size={20} className="fill-current" />
+            ) : (
+              <Mic size={24} />
+            )}
+            {isListening && (
+              <span className="absolute w-14 h-14 rounded-full border-2 border-red-500/30 animate-ping" />
+            )}
+          </button>
 
-          <div className="relative">
+          {/* Text Input */}
+          <div className="relative flex-1">
             <input 
               type="text"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleManualSend()}
+              onKeyDown={handleKeyDown}
               placeholder="Type your question..."
-              className="w-full py-4 pl-6 pr-16 text-sm border bg-slate-50 border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+              className={`w-full h-11 pl-4 text-sm text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 ${(isSpeaking || hasSpokenText) ? 'pr-32' : 'pr-12'}`}
+              disabled={isListening || isProcessing}
             />
-            <button 
-              onClick={handleManualSend}
-              disabled={!inputText.trim() || isProcessing}
-              className="absolute flex items-center justify-center w-12 text-white transition-colors right-2 top-2 bottom-2 bg-emerald-600 rounded-xl hover:bg-emerald-700 disabled:bg-slate-300"
-            >
-              <Send size={18} />
-            </button>
-          </div>
+            <div className="absolute right-2 top-1.5 flex items-center gap-1">
+              
+              {/* Audio Controls */}
+              {isSpeaking && !isPaused && (
+                <button 
+                  onClick={pauseSpeaking}
+                  title="Pause Audio"
+                  className="p-2 text-gray-500 hover:text-emerald-600 bg-gray-50 hover:bg-emerald-50 rounded-md transition-colors"
+                >
+                  <Pause size={16} />
+                </button>
+              )}
+              {isSpeaking && isPaused && (
+                <button 
+                  onClick={resumeSpeaking}
+                  title="Resume Audio"
+                  className="p-2 text-gray-500 hover:text-emerald-600 bg-gray-50 hover:bg-emerald-50 rounded-md transition-colors"
+                >
+                  <Play size={16} />
+                </button>
+              )}
+              {isSpeaking && (
+                <button 
+                  onClick={stopSpeaking}
+                  title="Stop Audio"
+                  className="p-2 text-gray-500 hover:text-red-600 bg-gray-50 hover:bg-red-50 rounded-md transition-colors"
+                >
+                  <VolumeX size={16} />
+                </button>
+              )}
+              {!isSpeaking && hasSpokenText && (
+                <button 
+                  onClick={replaySpeaking}
+                  title="Replay Last Answer"
+                  className="p-2 text-gray-500 hover:text-emerald-600 bg-gray-50 hover:bg-emerald-50 rounded-md transition-colors"
+                >
+                  <RotateCcw size={16} />
+                </button>
+              )}
 
-          {/* Footer Status - Matches Image */}
-          <div className="mt-6 flex justify-center items-center gap-4 text-[9px] font-bold uppercase tracking-widest text-slate-400">
-            <div className="flex items-center gap-1">
-              <Globe size={10} />
-              <span>Neural Engine v3.1</span>
+              {/* Send Button */}
+              <button 
+                onClick={handleManualSend}
+                disabled={!inputText.trim() || isListening || isProcessing}
+                className="p-2 text-gray-400 hover:text-emerald-600 disabled:opacity-50 disabled:hover:text-gray-400 transition-colors"
+              >
+                <Send size={18} />
+              </button>
             </div>
-            <div className="w-1 h-1 rounded-full bg-slate-300" />
-            <span>Real-time Sync</span>
           </div>
+          
+        </div>
+        
+        {/* Helper Text */}
+        <div className="mt-3 text-center">
+          <p className="text-xs text-gray-400 font-mono">
+            {isListening ? 'Listening...' : 'Tap the microphone to speak'}
+          </p>
         </div>
       </div>
+
     </div>
   );
 };

@@ -1,7 +1,14 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 
 export const useVoice = ({ lang = 'en-IN', onResult, onError } = {}) => {
   const [isListening, setIsListening]   = useState(false)
+  const [isSpeaking, setIsSpeaking]     = useState(false)
+  const [isPaused, setIsPaused]         = useState(false)
+  const [hasSpokenText, setHasSpokenText] = useState(false)
+  const lastSpokenText = useRef('')
+  const remainingTextRef = useRef('')
+  const currentLang = useRef('en-IN')
+  const isManuallyPaused = useRef(false)
   const [interimText, setInterimText]   = useState('')
   const [transcript, setTranscript]     = useState('')
 
@@ -119,29 +126,91 @@ export const useVoice = ({ lang = 'en-IN', onResult, onError } = {}) => {
     }
   }, [commit])
 
-  const speak = useCallback((text, speakLang = 'en-IN') => {
-    window.speechSynthesis.cancel()
-    const utt   = new SpeechSynthesisUtterance(text)
-    utt.lang    = speakLang
-    utt.rate    = 0.85
-    utt.pitch   = 1
-    const tick  = setInterval(() => { if (window.speechSynthesis.speaking) window.speechSynthesis.resume() }, 10000)
-    utt.onend   = () => clearInterval(tick)
-    utt.onerror = () => clearInterval(tick)
+  const startUtterance = useCallback((text, lang) => {
+    const utt = new SpeechSynthesisUtterance(text)
+    utt.lang = lang
+    utt.rate = 0.85
+    utt.pitch = 1
+
+    utt.onboundary = (e) => {
+      if (e.name === 'word') {
+        remainingTextRef.current = text.substring(e.charIndex)
+      }
+    }
+
+    const tick = setInterval(() => { 
+      if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
+        window.speechSynthesis.pause()
+        window.speechSynthesis.resume() 
+      }
+    }, 10000)
+
+    utt.onend = () => { 
+      clearInterval(tick)
+      if (!isManuallyPaused.current) {
+        setIsSpeaking(false)
+        setIsPaused(false)
+      }
+    }
+    utt.onerror = () => { 
+      clearInterval(tick)
+      if (!isManuallyPaused.current) {
+        setIsSpeaking(false)
+        setIsPaused(false)
+      }
+    }
     window.speechSynthesis.speak(utt)
   }, [])
 
-  const stopSpeaking = useCallback(() => {
+  const speak = useCallback((text, speakLang = 'en-IN') => {
+    isManuallyPaused.current = false
     window.speechSynthesis.cancel()
+    setIsSpeaking(true)
+    setIsPaused(false)
+    setHasSpokenText(true)
+    lastSpokenText.current = text
+    remainingTextRef.current = text
+    currentLang.current = speakLang
+    
+    startUtterance(text, speakLang)
+  }, [startUtterance])
+
+  const stopSpeaking = useCallback(() => {
+    isManuallyPaused.current = false
+    window.speechSynthesis.cancel()
+    setIsSpeaking(false)
+    setIsPaused(false)
   }, [])
 
   const pauseSpeaking = useCallback(() => {
-    window.speechSynthesis.pause()
+    isManuallyPaused.current = true
+    window.speechSynthesis.cancel() // Immediately kills audio to avoid lag
+    setIsPaused(true)
   }, [])
 
   const resumeSpeaking = useCallback(() => {
-    window.speechSynthesis.resume()
+    isManuallyPaused.current = false
+    setIsPaused(false)
+    if (remainingTextRef.current) {
+      startUtterance(remainingTextRef.current, currentLang.current)
+    }
+  }, [startUtterance])
+
+  const replaySpeaking = useCallback(() => {
+    if (lastSpokenText.current) {
+      speak(lastSpokenText.current, currentLang.current)
+    }
+  }, [speak])
+
+  useEffect(() => {
+    return () => {
+      window.speechSynthesis.cancel()
+    }
   }, [])
 
-  return { isListening, interimText, transcript, startListening, stopListening, speak, stopSpeaking, pauseSpeaking, resumeSpeaking, setTranscript }
+  return { 
+    isListening, isSpeaking, isPaused, hasSpokenText, 
+    interimText, transcript, startListening, stopListening, 
+    speak, stopSpeaking, pauseSpeaking, resumeSpeaking, replaySpeaking, setTranscript 
+  }
 }

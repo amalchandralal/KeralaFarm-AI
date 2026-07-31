@@ -5,6 +5,15 @@ export default defineConfig({
   plugins: [react()],
   root: 'client',
   build: {
-    outDir: '../dist'
+    outDir: '../dist',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          animations: ['framer-motion'],
+          maps: ['leaflet', 'react-leaflet'],
+        }
+      }
+    }
   }
 })

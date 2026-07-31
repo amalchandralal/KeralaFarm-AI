@@ -2,29 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Menu, 
-  X, 
-  ChevronDown, 
-  User, 
-  LogOut, 
-  LayoutDashboard, 
-  Mic, 
-  Scan, 
-  BarChart3, 
-  WifiOff, 
-  MapPin, 
-  Calendar,
-  Home,
-  Sprout,
-  Search,
-  Bell,
-  CloudRain,
-  Bug,
-  IndianRupee,
-  Sun,
-  Landmark,
-  CloudSun,
-  Download
+  Menu, X, ChevronDown, User, LogOut, LayoutDashboard, 
+  Mic, Scan, BarChart3, WifiOff, MapPin, Calendar, Home,
+  Sprout, Search, Bell, CloudRain, Bug, IndianRupee, Sun, 
+  Landmark, CloudSun, Download
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -39,7 +20,6 @@ const navLinks = [
   { label: 'Bookings',  to: '/bookings',  icon: Calendar },
 ];
 
-// ── Static notifications data ─────────────────────────────────────────────────
 const NOTIFICATIONS = [
   { id: 1, icon: CloudRain, title: 'Heavy Rain Alert',      desc: 'Rainfall expected in your area tomorrow. Harvest ripe vegetables today.', time: '2 min ago',  unread: true },
   { id: 2, icon: Bug,       title: 'Stem Borer Warning',    desc: 'High humidity detected. Apply Chlorpyrifos 2.5ml/L on paddy crops.', time: '1 hr ago',   unread: true },
@@ -49,7 +29,6 @@ const NOTIFICATIONS = [
   { id: 6, icon: Landmark,  title: 'New Scheme Available',  desc: 'Solar pump subsidy applications open. Visit Krishi Bhavan for details.', time: '2 days ago', unread: false },
 ];
 
-// ── Searchable pages/features ─────────────────────────────────────────────────
 const SEARCH_ITEMS = [
   { label: 'Voice AI Assistant',   to: '/voice',     icon: Mic,       desc: 'Ask farming questions by voice' },
   { label: 'Crop Disease Scanner', to: '/scan',      icon: Scan,      desc: 'Detect diseases from crop photos' },
@@ -68,36 +47,63 @@ const Navbar = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
-  const [menuOpen,       setMenuOpen]       = useState(false);
-  const [dropdownOpen,   setDropdownOpen]   = useState(false);
-  const [searchOpen,     setSearchOpen]     = useState(false);
-  const [searchQuery,    setSearchQuery]    = useState('');
-  const [notifOpen,      setNotifOpen]      = useState(false);
-  const [notifications,  setNotifications]  = useState(NOTIFICATIONS);
+  const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [notifications, setNotifications] = useState(NOTIFICATIONS);
 
   const dropdownRef = useRef(null);
-  const searchRef   = useRef(null);
-  const notifRef    = useRef(null);
+  const notifRef = useRef(null);
   const searchInput = useRef(null);
 
-  // Close panels on outside click
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 10);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   useEffect(() => {
     const handle = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setDropdownOpen(false);
-      if (searchRef.current   && !searchRef.current.contains(e.target))   { setSearchOpen(false); setSearchQuery(''); }
-      if (notifRef.current    && !notifRef.current.contains(e.target))    setNotifOpen(false);
+      if (notifRef.current && !notifRef.current.contains(e.target)) setNotifOpen(false);
     };
     document.addEventListener('mousedown', handle);
     return () => document.removeEventListener('mousedown', handle);
   }, []);
 
-  // Focus input when search opens
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setSearchOpen((prev) => !prev);
+      }
+      if (e.key === 'Escape') {
+        setSearchOpen(false);
+        setSearchQuery('');
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   useEffect(() => {
     if (searchOpen) setTimeout(() => searchInput.current?.focus(), 50);
   }, [searchOpen]);
 
-  // Close mobile menu on route change
   useEffect(() => { setMenuOpen(false); }, [pathname]);
+  
+  useEffect(() => {
+    if (menuOpen || searchOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+  }, [menuOpen, searchOpen]);
 
   const handleLogout = async () => {
     await logout();
@@ -106,12 +112,8 @@ const Navbar = () => {
     navigate('/');
   };
 
-  const markAllRead = () =>
-    setNotifications(prev => prev.map(n => ({ ...n, unread: false })));
-
-  const markOneRead = (id) =>
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, unread: false } : n));
-
+  const markAllRead = () => setNotifications(prev => prev.map(n => ({ ...n, unread: false })));
+  const markOneRead = (id) => setNotifications(prev => prev.map(n => n.id === id ? { ...n, unread: false } : n));
   const unreadCount = notifications.filter(n => n.unread).length;
 
   const searchResults = searchQuery.trim().length > 0
@@ -126,262 +128,169 @@ const Navbar = () => {
     : '?';
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-slate-200/60 bg-white/80 backdrop-blur-xl">
-      <div className="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
-
-          {/* ── Logo ── */}
-          <Link to="/" className="flex items-center gap-2.5 group">
-            <motion.div 
-              whileHover={{ rotate: 15, scale: 1.1 }}
-              className="bg-emerald-600 p-2.5 rounded-2xl shadow-lg shadow-emerald-200 group-hover:shadow-emerald-300 transition-all duration-300"
-            >
-              <Sprout className="w-6 h-6 text-white" />
-            </motion.div>
-            <div className="flex flex-col -space-y-1">
-              <span className="text-xl font-black tracking-tight text-slate-900">
-                KeralaFarm <span className="text-emerald-600">AI</span>
+    <>
+      <nav 
+        className={`sticky top-0 z-50 w-full h-16 transition-all duration-200 ease-out-expo border-b ${
+          scrolled 
+            ? 'bg-white/80 backdrop-blur-lg border-gray-200/80 shadow-sm' 
+            : 'bg-white border-gray-200/80'
+        }`}
+      >
+        <div className="flex items-center justify-between h-full px-6 mx-auto w-full sm:px-8 lg:px-12">
+          
+          {/* LEFT: Logo & Links */}
+          <div className="flex items-center h-full gap-10">
+            <Link to="/" className="flex items-center gap-3 group">
+              <div className="flex items-center justify-center w-10 h-10 text-white transition-transform duration-200 rounded-lg shadow-sm bg-emerald-600 group-hover:scale-105">
+                <Sprout className="w-6 h-6" />
+              </div>
+              <span className="text-xl font-bold tracking-tight text-gray-900">
+                AgroVision
               </span>
-            </div>
-          </Link>
+            </Link>
 
-          {/* ── Desktop nav links ── */}
-          <div className="items-center hidden gap-1 xl:flex">
-            {navLinks.map(link => {
-              const isActive = pathname === link.to || (link.to !== '/' && pathname.startsWith(link.to));
-              const Icon = link.icon;
-              return (
-                <Link key={link.to} to={link.to}
-                  className={`relative px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 flex items-center gap-2 group/link ${
-                    isActive ? 'text-emerald-600' : 'text-slate-500 hover:text-emerald-600 hover:bg-emerald-50/50'
-                  }`}
-                >
-                  <Icon size={16} className={`${isActive ? 'text-emerald-600' : 'text-slate-400 group-hover/link:text-emerald-500'} transition-colors`} />
-                  {link.label}
-                  {isActive && (
-                    <motion.div 
-                      layoutId="nav-underline"
-                      className="absolute bottom-0 left-4 right-4 h-0.5 bg-emerald-600 rounded-full"
-                    />
-                  )}
-                </Link>
-              );
-            })}
+            <div className="items-center hidden h-full gap-8 xl:flex">
+              {navLinks.map(link => {
+                const isActive = pathname === link.to || (link.to !== '/' && pathname.startsWith(link.to));
+                return (
+                  <Link 
+                    key={link.to} 
+                    to={link.to}
+                    className={`relative h-full flex items-center text-base font-medium transition-colors duration-200 ${
+                      isActive ? 'text-emerald-600' : 'text-gray-500 hover:text-gray-900'
+                    }`}
+                  >
+                    {link.label}
+                    {isActive && (
+                      <motion.div 
+                        layoutId="nav-underline"
+                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-600 rounded-t-full"
+                      />
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
           </div>
 
-          {/* ── Desktop Actions ── */}
-          <div className="items-center hidden gap-2 lg:flex">
-
-            {/* Search */}
-            <div className="relative" ref={searchRef}>
-              <div className={`flex items-center gap-2 transition-all duration-300 ${
-                searchOpen ? 'bg-slate-100 rounded-xl px-3 py-2' : ''
-              }`}>
-                {searchOpen && (
-                  <input
-                    ref={searchInput}
-                    type="text"
-                    value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
-                    onKeyDown={e => e.key === 'Escape' && (setSearchOpen(false), setSearchQuery(''))}
-                    placeholder="Search crops, pests, markets..."
-                    className="w-56 text-sm font-medium bg-transparent outline-none text-slate-700 placeholder-slate-400"
-                  />
-                )}
-                <button
-                  onClick={() => { setSearchOpen(v => !v); setSearchQuery(''); setNotifOpen(false); setDropdownOpen(false); }}
-                  className="p-2 transition-all text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl"
-                >
-                  {searchOpen ? <X size={18} /> : <Search size={20} />}
-                </button>
-              </div>
-
-              {/* Search results dropdown */}
-              <AnimatePresence>
-                {searchOpen && searchQuery.trim().length > 0 && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute right-0 z-50 overflow-hidden bg-white border shadow-2xl top-14 w-80 border-slate-100 rounded-2xl"
-                  >
-                    {searchResults.length > 0 ? (
-                      <div className="p-2">
-                        <p className="px-3 py-2 text-xs font-bold tracking-wider uppercase text-slate-400">
-                          {searchResults.length} result{searchResults.length !== 1 ? 's' : ''}
-                        </p>
-                        {searchResults.map(item => {
-                          const Icon = item.icon;
-                          return (
-                            <Link key={item.to + item.label} to={item.to}
-                              onClick={() => { setSearchOpen(false); setSearchQuery(''); }}
-                              className="flex items-center gap-3 px-3 py-3 transition-colors rounded-xl hover:bg-emerald-50 group"
-                            >
-                              <span className="flex items-center justify-center w-9 h-9 bg-slate-50 rounded-xl group-hover:bg-emerald-100">
-                                <Icon size={16} className="text-slate-500 group-hover:text-emerald-600" />
-                              </span>
-                              <div>
-                                <p className="text-sm font-bold text-slate-800 group-hover:text-emerald-700">{item.label}</p>
-                                <p className="text-xs text-slate-400">{item.desc}</p>
-                              </div>
-                            </Link>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div className="px-4 py-8 text-center">
-                        <Search size={24} className="mx-auto mb-2 text-slate-300" />
-                        <p className="text-sm font-bold text-slate-500">No results for "{searchQuery}"</p>
-                        <p className="mt-1 text-xs text-slate-400">Try: crops, weather, prices</p>
-                      </div>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+          {/* RIGHT: Actions */}
+          <div className="items-center hidden gap-4 lg:flex">
+            
+            {/* Search Button */}
+            <button 
+              onClick={() => setSearchOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 text-base text-gray-500 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors"
+            >
+              <Search className="w-5 h-5" />
+              <span className="font-medium">Search...</span>
+              <kbd className="hidden sm:inline-flex items-center gap-1 px-2 font-mono text-[11px] font-medium text-gray-400 bg-white border border-gray-200 rounded">
+                <span className="text-sm">⌘</span>K
+              </kbd>
+            </button>
 
             {/* Notifications */}
             <div className="relative" ref={notifRef}>
               <button
-                onClick={() => { setNotifOpen(v => !v); setSearchOpen(false); setDropdownOpen(false); }}
-                className="relative p-2.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
+                onClick={() => { setNotifOpen(v => !v); setDropdownOpen(false); }}
+                className="relative p-2 text-gray-500 transition-colors rounded-md hover:text-gray-900 hover:bg-gray-100"
               >
-                <Bell size={20} />
+                <Bell className="w-5 h-5" />
                 {unreadCount > 0 && (
-                  <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center border-2 border-white">
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </span>
+                  <span className="absolute top-1.5 right-2 w-2 h-2 bg-emerald-600 rounded-full ring-2 ring-white" />
                 )}
               </button>
 
               <AnimatePresence>
                 {notifOpen && (
                   <motion.div 
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    initial={{ opacity: 0, y: 8, scale: 0.98 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute right-0 z-50 overflow-hidden bg-white border shadow-2xl top-14 w-96 border-slate-100 rounded-2xl"
+                    exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                    transition={{ duration: 0.15, ease: "easeOut" }}
+                    className="absolute right-0 z-50 mt-2 overflow-hidden origin-top-right bg-white border border-gray-200 rounded-lg shadow-lg w-80"
                   >
-                    {/* Header */}
-                    <div className="flex items-center justify-between px-5 py-4 border-b border-slate-50">
-                      <div>
-                        <p className="font-black text-slate-900">Notifications</p>
-                        <p className="text-xs text-slate-400 font-medium mt-0.5">{unreadCount} unread alerts</p>
-                      </div>
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-gray-50/50">
+                      <p className="text-sm font-semibold text-gray-900">Notifications</p>
                       {unreadCount > 0 && (
-                        <button onClick={markAllRead}
-                          className="text-xs font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-lg transition-colors">
-                          Mark all read
+                        <button onClick={markAllRead} className="text-xs font-medium transition-colors text-emerald-600 hover:text-emerald-700">
+                          Mark all as read
                         </button>
                       )}
                     </div>
-
-                    {/* List */}
-                    <div className="overflow-y-auto max-h-96">
+                    <div className="overflow-y-auto max-h-[28rem]">
                       {notifications.map(n => {
                         const Icon = n.icon;
                         return (
-                          <div key={n.id}
-                            onClick={() => markOneRead(n.id)}
-                            className={`flex items-start gap-3 px-5 py-4 cursor-pointer transition-colors border-b border-slate-50 last:border-0 ${
-                              n.unread ? 'bg-emerald-50/50 hover:bg-emerald-50' : 'hover:bg-slate-50'
+                          <div key={n.id} onClick={() => markOneRead(n.id)}
+                            className={`flex gap-3 px-4 py-3 cursor-pointer border-b border-gray-100 last:border-0 transition-colors ${
+                              n.unread ? 'bg-emerald-50/30 hover:bg-emerald-50/50' : 'hover:bg-gray-50'
                             }`}
                           >
-                            <span className="flex items-center justify-center flex-shrink-0 w-10 h-10 bg-white border shadow-sm rounded-xl border-slate-100">
-                              <Icon size={18} className="text-emerald-600" />
-                            </span>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-0.5">
-                                <p className={`text-sm font-bold truncate ${n.unread ? 'text-slate-900' : 'text-slate-600'}`}>{n.title}</p>
-                                {n.unread && <span className="flex-shrink-0 w-2 h-2 rounded-full bg-emerald-500" />}
+                            <div className="flex-shrink-0 mt-0.5">
+                              <div className={`p-1.5 rounded-md ${n.unread ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-100 text-gray-500'}`}>
+                                <Icon className="w-4 h-4" />
                               </div>
-                              <p className="text-xs leading-relaxed text-slate-500 line-clamp-2">{n.desc}</p>
-                              <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-wider">{n.time}</p>
                             </div>
+                            <div className="flex-1 min-w-0">
+                              <p className={`text-sm truncate ${n.unread ? 'font-medium text-gray-900' : 'text-gray-600'}`}>{n.title}</p>
+                              <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{n.desc}</p>
+                              <p className="text-[10px] text-gray-400 mt-1">{n.time}</p>
+                            </div>
+                            {n.unread && <div className="flex-shrink-0 w-2 h-2 rounded-full bg-emerald-600 mt-1.5" />}
                           </div>
                         );
                       })}
-                    </div>
-
-                    {/* Footer */}
-                    <div className="px-5 py-3 border-t border-slate-50 bg-slate-50/50">
-                      <p className="text-xs font-medium text-center text-slate-400">
-                        Alerts based on your location & crops
-                      </p>
                     </div>
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
 
-            <div className="w-px h-8 mx-1 bg-slate-200" />
-
-            {/* User dropdown */}
+            {/* User Dropdown */}
             {user ? (
               <div className="relative" ref={dropdownRef}>
                 <button
-                  onClick={() => { setDropdownOpen(v => !v); setNotifOpen(false); setSearchOpen(false); }}
-                  className="flex items-center gap-3 p-1.5 pr-3 transition-all rounded-2xl border border-slate-100 hover:border-emerald-200 hover:bg-emerald-50/50"
+                  onClick={() => { setDropdownOpen(v => !v); setNotifOpen(false); }}
+                  className="flex items-center gap-2 transition-opacity hover:opacity-80"
                 >
-                  <div className="flex items-center justify-center text-sm font-black text-white shadow-lg w-9 h-9 bg-emerald-600 rounded-xl shadow-emerald-200 ring-2 ring-white">
+                  <div className="flex items-center justify-center w-8 h-8 text-xs font-semibold text-gray-600 bg-gray-100 border border-gray-200 rounded-full">
                     {initials}
                   </div>
-                  <div className="hidden text-left xl:block">
-                    <p className="mb-1 text-xs font-black leading-none text-slate-900">{user.name}</p>
-                    <div className="flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-                      <p className="text-[10px] text-emerald-600 font-black uppercase tracking-wider">Active</p>
-                    </div>
-                  </div>
-                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-300 ${dropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
 
                 <AnimatePresence>
                   {dropdownOpen && (
                     <motion.div 
-                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      initial={{ opacity: 0, y: 8, scale: 0.98 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      className="absolute right-0 z-50 p-3 mt-3 overflow-hidden bg-white border shadow-2xl w-72 border-slate-100 rounded-3xl"
+                      exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                      transition={{ duration: 0.15, ease: "easeOut" }}
+                      className="absolute right-0 z-50 w-56 mt-2 overflow-hidden origin-top-right bg-white border border-gray-200 rounded-lg shadow-lg"
                     >
-                      {/* Profile header */}
-                      <div className="px-4 py-4 mb-2 bg-gradient-to-br from-slate-50 to-emerald-50/30 rounded-2xl">
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="flex items-center justify-center w-12 h-12 text-lg font-black text-white shadow-lg bg-emerald-600 rounded-2xl shadow-emerald-200">
-                            {initials}
-                          </div>
-                          <div>
-                            <p className="text-sm font-black text-slate-900">{user.name}</p>
-                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{user.email}</p>
-                          </div>
-                        </div>
+                      <div className="px-4 py-3 border-b border-gray-200">
+                        <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
+                        <p className="text-xs text-gray-500 truncate">{user.email}</p>
                       </div>
-
-                      <div className="space-y-1">
+                      <div className="py-1">
                         {[
-                          { label: 'My Profile',       to: '/profile',   icon: User },
-                          { label: 'My Bookings',      to: '/bookings',  icon: Calendar },
-                          { label: 'Resource Tracker', to: '/tracker',   icon: BarChart3 },
+                          { label: 'Profile',   to: '/profile',  icon: User },
+                          { label: 'Bookings',  to: '/bookings', icon: Calendar },
+                          { label: 'Tracker',   to: '/tracker',  icon: BarChart3 },
                         ].map(item => (
-                          <Link key={item.to} to={item.to}
-                            onClick={() => setDropdownOpen(false)}
-                            className="flex items-center gap-3 px-4 py-3 text-sm font-bold transition-all text-slate-600 hover:bg-emerald-50 hover:text-emerald-600 rounded-2xl group/item"
+                          <Link key={item.to} to={item.to} onClick={() => setDropdownOpen(false)}
+                            className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 transition-colors hover:text-gray-900 hover:bg-gray-50"
                           >
-                            <div className="flex items-center justify-center w-8 h-8 transition-colors rounded-xl bg-slate-50 group-hover/item:bg-emerald-100">
-                              <item.icon size={16} className="text-slate-400 group-hover/item:text-emerald-600" />
-                            </div>
+                            <item.icon className="w-4 h-4 text-gray-400" />
                             {item.label}
                           </Link>
                         ))}
                       </div>
-
-                      <div className="pt-3 mt-3 border-t border-slate-100">
+                      <div className="py-1 border-t border-gray-200">
                         <button onClick={handleLogout}
-                          className="flex items-center w-full gap-3 px-4 py-3 text-sm font-bold text-red-500 transition-colors hover:bg-red-50 rounded-2xl">
-                          <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-red-50">
-                            <LogOut size={16} />
-                          </div>
-                          Logout Account
+                          className="flex items-center w-full gap-2 px-4 py-2 text-sm text-gray-600 transition-colors hover:text-gray-900 hover:bg-gray-50"
+                        >
+                          <LogOut className="w-4 h-4 text-gray-400" />
+                          Log out
                         </button>
                       </div>
                     </motion.div>
@@ -389,181 +298,203 @@ const Navbar = () => {
                 </AnimatePresence>
               </div>
             ) : (
-              <div className="flex items-center gap-2">
-                <Link to="/login" className="text-sm font-bold text-slate-600 hover:text-emerald-600 transition-colors px-4 py-2.5">
-                  Login
+              <div className="flex items-center gap-4 ml-4">
+                <Link to="/login" className="text-base font-medium text-gray-500 transition-colors hover:text-gray-900">
+                  Log in
                 </Link>
-                <Link to="/register" className="text-sm font-black bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-2xl transition-all shadow-lg shadow-emerald-200 hover:-translate-y-0.5 active:scale-95">
-                  Get Started
+                <Link to="/register" className="text-base font-medium bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-lg transition-colors shadow-sm">
+                  Sign up
                 </Link>
               </div>
             )}
           </div>
 
-          {/* ── Mobile hamburger ── */}
-          <div className="flex items-center gap-2 lg:hidden">
-            <button className="relative p-2.5 text-slate-400 hover:bg-slate-100 rounded-xl"
-              onClick={() => { setNotifOpen(v => !v); setMenuOpen(false); }}>
-              <Bell size={20} />
-              {unreadCount > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center border-2 border-white">
-                  {unreadCount}
-                </span>
-              )}
+          {/* Mobile Toggle */}
+          <div className="flex items-center gap-4 lg:hidden">
+            <button 
+              onClick={() => setSearchOpen(true)}
+              className="text-gray-500 transition-colors hover:text-gray-900"
+            >
+              <Search className="w-5 h-5" />
             </button>
             <button
-              className="p-2.5 text-slate-600 rounded-xl hover:bg-slate-100 transition-colors"
-              onClick={() => { setMenuOpen(v => !v); setNotifOpen(false); }}
+              onClick={() => { setMenuOpen(true); setNotifOpen(false); }}
+              className="text-gray-500 transition-colors hover:text-gray-900"
             >
-              {menuOpen ? <X size={24} /> : <Menu size={24} />}
+              <Menu className="w-6 h-6" />
             </button>
           </div>
         </div>
-      </div>
+      </nav>
 
-      {/* ── Mobile notification panel ── */}
+      {/* ── Search Command Palette Modal ── */}
       <AnimatePresence>
-        {notifOpen && (
-          <motion.div 
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="overflow-y-auto bg-white border-t lg:hidden border-slate-100 max-h-96"
-          >
-            <div className="flex items-center justify-between px-5 py-3 border-b border-slate-50">
-              <p className="text-sm font-black text-slate-900">Notifications</p>
-              {unreadCount > 0 && (
-                <button onClick={markAllRead} className="text-xs font-bold text-emerald-600">Mark all read</button>
-              )}
-            </div>
-            {notifications.map(n => {
-              const Icon = n.icon;
-              return (
-                <div key={n.id} onClick={() => markOneRead(n.id)}
-                  className={`flex items-start gap-3 px-5 py-3 border-b border-slate-50 last:border-0 ${n.unread ? 'bg-emerald-50/50' : ''}`}>
-                  <Icon size={18} className="flex-shrink-0 text-emerald-600 mt-0.5" />
-                  <div>
-                    <p className={`text-sm font-bold ${n.unread ? 'text-slate-900' : 'text-slate-600'}`}>{n.title}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">{n.desc}</p>
-                    <p className="text-[10px] text-slate-400 font-bold mt-1">{n.time}</p>
-                  </div>
-                  {n.unread && <span className="w-2 h-2 bg-emerald-500 rounded-full flex-shrink-0 mt-1.5" />}
+        {searchOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="fixed inset-0 z-[100] bg-gray-900/20 backdrop-blur-sm"
+              onClick={() => { setSearchOpen(false); setSearchQuery(''); }}
+            />
+            <div className="fixed inset-0 z-[101] overflow-y-auto p-4 sm:p-6 md:p-20 flex justify-center items-start pointer-events-none">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: -20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: -20 }}
+                transition={{ duration: 0.15, ease: "easeOut" }}
+                className="w-full max-w-xl overflow-hidden bg-white border border-gray-200 shadow-2xl pointer-events-auto rounded-xl"
+              >
+                <div className="flex items-center px-4 border-b border-gray-200">
+                  <Search className="w-5 h-5 text-gray-400" />
+                  <input
+                    ref={searchInput}
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search AgroVision..."
+                    className="w-full px-4 py-4 text-base text-gray-900 placeholder-gray-400 bg-transparent border-0 focus:outline-none focus:ring-0"
+                  />
+                  <kbd className="hidden sm:inline-flex items-center px-2 py-1 font-mono text-[10px] font-medium text-gray-500 bg-gray-100 rounded border border-gray-200">
+                    ESC
+                  </kbd>
                 </div>
-              );
-            })}
-          </motion.div>
+                
+                <div className="max-h-[60vh] overflow-y-auto p-2">
+                  {searchQuery.trim().length === 0 ? (
+                    <div className="px-4 py-8 text-center">
+                      <p className="text-sm text-gray-500">Try searching for crops, weather, or features</p>
+                    </div>
+                  ) : searchResults.length > 0 ? (
+                    <div className="space-y-1">
+                      {searchResults.map((item, idx) => {
+                        const Icon = item.icon;
+                        return (
+                          <Link
+                            key={`${item.to}-${idx}`}
+                            to={item.to}
+                            onClick={() => { setSearchOpen(false); setSearchQuery(''); }}
+                            className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 transition-colors group"
+                          >
+                            <div className="flex items-center justify-center w-8 h-8 text-gray-400 bg-white border border-gray-200 rounded-md shadow-sm group-hover:text-gray-600">
+                              <Icon className="w-4 h-4" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 truncate">{item.label}</p>
+                              <p className="text-xs text-gray-500 truncate">{item.desc}</p>
+                            </div>
+                            <span className="text-gray-300 group-hover:text-gray-400">
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                              </svg>
+                            </span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="px-4 py-8 text-center">
+                      <p className="text-sm font-medium text-gray-900">No results found</p>
+                      <p className="mt-1 text-sm text-gray-500">We couldn't find anything matching "{searchQuery}"</p>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            </div>
+          </>
         )}
       </AnimatePresence>
 
-      {/* ── Mobile menu ── */}
+      {/* ── Mobile Drawer ── */}
       <AnimatePresence>
         {menuOpen && (
-          <motion.div 
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden bg-white border-t lg:hidden border-slate-100"
-          >
-            <div className="px-4 py-6 space-y-1.5">
-              {navLinks.map(link => {
-                const isActive = pathname === link.to || (link.to !== '/' && pathname.startsWith(link.to));
-                const Icon = link.icon;
-                return (
-                  <Link key={link.to} to={link.to} onClick={() => setMenuOpen(false)}
-                    className={`flex items-center gap-4 px-5 py-4 rounded-2xl text-base font-bold transition-all ${
-                      isActive ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-200' : 'text-slate-600 hover:bg-slate-50'
-                    }`}
-                  >
-                    <Icon size={20} />
-                    {link.label}
-                  </Link>
-                );
-              })}
-
-              {/* Mobile search */}
-              <div className="pt-2">
-                <div className="flex items-center gap-3 px-4 py-3 bg-slate-100 rounded-2xl">
-                  <Search size={18} className="flex-shrink-0 text-slate-400" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
-                    placeholder="Search crops, pests, markets..."
-                    className="flex-1 text-sm font-medium bg-transparent outline-none text-slate-700 placeholder-slate-400"
-                  />
-                </div>
-                {searchQuery.trim().length > 0 && (
-                  <div className="mt-2 space-y-1">
-                    {(SEARCH_ITEMS.filter(item =>
-                      item.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                      item.desc.toLowerCase().includes(searchQuery.toLowerCase())
-                    )).map(item => {
-                      const Icon = item.icon;
-                      return (
-                        <Link key={item.to + item.label} to={item.to}
-                          onClick={() => { setMenuOpen(false); setSearchQuery(''); }}
-                          className="flex items-center gap-3 px-4 py-3 transition-colors rounded-xl hover:bg-emerald-50"
-                        >
-                          <Icon size={18} className="text-slate-500" />
-                          <div>
-                            <p className="text-sm font-bold text-slate-800">{item.label}</p>
-                            <p className="text-xs text-slate-400">{item.desc}</p>
-                          </div>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                )}
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 z-[100] bg-gray-900/20 backdrop-blur-sm lg:hidden"
+              onClick={() => setMenuOpen(false)}
+            />
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed inset-y-0 right-0 z-[101] w-4/5 max-w-sm bg-white shadow-xl flex flex-col lg:hidden border-l border-gray-200"
+            >
+              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+                <span className="flex items-center gap-2 text-base font-semibold tracking-tight text-gray-900">
+                   <Sprout className="w-5 h-5 text-emerald-600" />
+                   AgroVision
+                </span>
+                <button
+                  onClick={() => setMenuOpen(false)}
+                  className="p-2 text-gray-500 transition-colors rounded-md hover:text-gray-900 hover:bg-gray-100"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
 
-              <div className="pt-4 mt-2 border-t border-slate-100">
+              <div className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+                {navLinks.map(link => {
+                  const isActive = pathname === link.to || (link.to !== '/' && pathname.startsWith(link.to));
+                  const Icon = link.icon;
+                  return (
+                    <Link
+                      key={link.to}
+                      to={link.to}
+                      onClick={() => setMenuOpen(false)}
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors ${
+                        isActive ? 'bg-emerald-50 text-emerald-600' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      }`}
+                    >
+                      <Icon className="w-5 h-5" />
+                      {link.label}
+                    </Link>
+                  );
+                })}
+              </div>
+
+              <div className="p-4 border-t border-gray-200 bg-gray-50">
                 {user ? (
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-4 px-5 py-4 border bg-gradient-to-br from-slate-50 to-emerald-50/50 rounded-2xl border-slate-100">
-                      <div className="flex items-center justify-center flex-shrink-0 w-12 h-12 text-lg font-black text-white shadow-lg bg-emerald-600 rounded-2xl shadow-emerald-200 ring-4 ring-white">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-center w-10 h-10 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-full shadow-sm">
                         {initials}
                       </div>
-                      <div>
-                        <p className="font-black text-slate-900">{user.name}</p>
-                        <p className="text-xs text-slate-500">{user.email}</p>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
+                        <p className="text-xs text-gray-500 truncate">{user.email}</p>
                       </div>
                     </div>
-                    <div className="grid grid-cols-3 gap-2">
-                      {[
-                        { to: '/profile',  icon: User,      label: 'Profile' },
-                        { to: '/bookings', icon: Calendar,  label: 'Bookings' },
-                        { to: '/tracker',  icon: BarChart3, label: 'Tracker' },
-                      ].map(item => (
-                        <Link key={item.to} to={item.to} onClick={() => setMenuOpen(false)}
-                          className="flex flex-col items-center gap-2 p-3 font-bold transition-colors bg-slate-50 rounded-2xl text-slate-600 hover:bg-emerald-50 hover:text-emerald-600">
-                          <item.icon size={18} />
-                          <span className="text-xs">{item.label}</span>
-                        </Link>
-                      ))}
-                    </div>
-                    <button onClick={handleLogout}
-                      className="flex items-center justify-center w-full gap-3 px-5 py-4 font-black text-red-500 transition-colors bg-red-50 rounded-2xl hover:bg-red-100">
-                      <LogOut size={18} /> Logout Account
+                    <button
+                      onClick={handleLogout}
+                      className="flex items-center justify-center w-full gap-2 px-4 py-2 text-sm font-medium text-gray-700 transition-colors bg-white border border-gray-200 rounded-md shadow-sm hover:bg-gray-50"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Log out
                     </button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 gap-3">
-                    <Link to="/login" onClick={() => setMenuOpen(false)}
-                      className="flex items-center justify-center px-5 py-4 text-base font-bold text-slate-600 bg-slate-50 rounded-2xl">
-                      Login
+                  <div className="space-y-2">
+                    <Link to="/login" onClick={() => setMenuOpen(false)} className="flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-gray-700 transition-colors bg-white border border-gray-200 rounded-md shadow-sm hover:bg-gray-50">
+                      Log in
                     </Link>
-                    <Link to="/register" onClick={() => setMenuOpen(false)}
-                      className="flex items-center justify-center px-5 py-4 text-base font-black text-white shadow-xl bg-emerald-600 rounded-2xl shadow-emerald-200">
-                      Register
+                    <Link to="/register" onClick={() => setMenuOpen(false)} className="flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-white transition-colors bg-gray-900 rounded-md shadow-sm hover:bg-gray-800">
+                      Sign up
                     </Link>
                   </div>
                 )}
               </div>
-            </div>
-          </motion.div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
-    </nav>
+    </>
   );
 };
 

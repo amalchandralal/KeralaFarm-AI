@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Calendar, Plus, Inbox, ArrowLeft, Phone, User, MapPin, IndianRupee, CheckCircle2, AlertTriangle } from 'lucide-react'
+import { Calendar, Plus, Inbox, ArrowLeft, Phone, User, MapPin, IndianRupee, CheckCircle2, AlertTriangle, X } from 'lucide-react'
 import { getBookings, createBooking } from '../services/api'
 import BookingCard from '../components/BookingCard'
 
@@ -83,211 +82,195 @@ const BookingsPage = () => {
   }
 
   return (
-    <div className="min-h-screen pt-12 pb-20 bg-stone-50">
+    <div className="min-h-screen pt-24 pb-20 bg-gray-50 font-sans relative">
       <div className="max-w-5xl px-4 mx-auto sm:px-6 lg:px-8">
         
         {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6 bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
           <div>
-            <Link to="/" className="inline-flex items-center gap-2 mb-3 text-xs font-bold tracking-widest uppercase transition-all text-emerald-600 hover:gap-3">
-              <ArrowLeft size={14} /> Back to Home
+            <Link to="/" className="inline-flex items-center gap-1.5 mb-2 text-sm font-medium text-emerald-600 hover:text-emerald-700">
+              <ArrowLeft size={16} /> Back to Home
             </Link>
-            <h1 className="mb-1 text-4xl font-black tracking-tight md:text-5xl text-slate-900">
-              My <span className="text-emerald-600">Bookings</span>
+            <h1 className="text-3xl font-bold text-gray-900">
+              My Bookings
             </h1>
           </div>
           
           <button 
-            onClick={() => { setShowForm(!showForm); resetForm() }}
-            className={`px-8 py-4 rounded-2xl font-black text-base shadow-lg transition-all flex items-center gap-3 h-fit ${
-              showForm 
-                ? 'bg-slate-100 text-slate-500 hover:bg-slate-200' 
-                : 'bg-emerald-600 text-white shadow-emerald-200/50 hover:bg-emerald-700 hover:-translate-y-1 active:scale-95'
-            }`}
+            onClick={() => { setShowForm(true); resetForm() }}
+            className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white text-sm font-medium rounded-md hover:bg-emerald-700 transition-colors w-fit shadow-sm"
           >
-            {showForm ? 'Cancel' : <><Plus size={20} /> New Booking</>}
+            <Plus size={18} /> New Booking
           </button>
         </div>
 
         {/* Success Message */}
-        <AnimatePresence>
-          {success && (
-            <motion.div 
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="flex items-center gap-3 p-6 mb-8 border bg-emerald-50 border-emerald-100 text-emerald-700 rounded-[2rem] shadow-sm font-bold"
-            >
-              <CheckCircle2 size={24} />
-              <p>{success}</p>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {success && (
+          <div className="flex items-center gap-2 p-4 mb-6 text-sm font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-md">
+            <CheckCircle2 size={18} />
+            {success}
+          </div>
+        )}
 
-        {/* Booking Form */}
-        <AnimatePresence>
-          {showForm && (
-            <motion.div 
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="mb-12 overflow-hidden"
-            >
-              <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-xl">
-                <h2 className="flex items-center gap-3 mb-8 text-2xl font-black text-slate-900">
-                  <div className="flex items-center justify-center w-10 h-10 bg-emerald-100 rounded-xl text-emerald-600">
-                    <Calendar size={20} />
-                  </div>
+        {/* Overlay Panel for Form */}
+        {showForm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm">
+            <div className="w-full max-w-2xl bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden max-h-[90vh] flex flex-col">
+              <div className="flex items-center justify-between p-5 border-b border-gray-200">
+                <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <Calendar size={20} className="text-emerald-600" />
                   Create New Booking
-                  {placeNameFromUrl && <span className="ml-auto text-sm font-black tracking-widest uppercase text-emerald-600">— {decodeURIComponent(placeNameFromUrl)}</span>}
                 </h2>
+                <button 
+                  onClick={() => { setShowForm(false); resetForm() }}
+                  className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
 
+              <div className="p-6 overflow-y-auto">
                 {formError && (
-                  <div className="flex items-center gap-3 p-4 mb-8 text-sm font-bold text-red-700 border border-red-100 bg-red-50 rounded-2xl">
-                    <AlertTriangle size={20} /> {formError}
+                  <div className="flex items-center gap-2 p-3 mb-6 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-md">
+                    <AlertTriangle size={18} /> {formError}
                   </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-5 md:grid-cols-2">
                   {/* Place Name */}
                   <div className="md:col-span-2">
-                    <label className="block mb-2 text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Place Name *</label>
+                    <label className="block mb-1.5 text-sm font-medium text-gray-700">Place Name *</label>
                     <div className="relative">
-                      <MapPin className="absolute -translate-y-1/2 left-4 top-1/2 text-slate-400" size={18} />
+                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                       <input
                         type="text"
                         value={placeName}
                         onChange={e => setPlaceName(e.target.value)}
                         placeholder="e.g. Krishi Bhavan Palakkad"
-                        className="w-full py-4 pl-12 pr-4 text-sm font-bold transition-all border-none outline-none bg-slate-50 rounded-2xl focus:ring-4 focus:ring-emerald-500/10"
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none text-sm text-gray-900"
                       />
                     </div>
                   </div>
 
                   {/* Name */}
                   <div>
-                    <label className="block mb-2 text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Your Full Name *</label>
+                    <label className="block mb-1.5 text-sm font-medium text-gray-700">Your Full Name *</label>
                     <div className="relative">
-                      <User className="absolute -translate-y-1/2 left-4 top-1/2 text-slate-400" size={18} />
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                       <input
                         type="text"
                         value={name}
                         onChange={e => setName(e.target.value)}
                         placeholder="Enter your full name"
-                        className="w-full py-4 pl-12 pr-4 text-sm font-bold transition-all border-none outline-none bg-slate-50 rounded-2xl focus:ring-4 focus:ring-emerald-500/10"
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none text-sm text-gray-900"
                       />
                     </div>
                   </div>
 
                   {/* Phone */}
                   <div>
-                    <label className="block mb-2 text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Phone Number *</label>
+                    <label className="block mb-1.5 text-sm font-medium text-gray-700">Phone Number *</label>
                     <div className="relative">
-                      <Phone className="absolute -translate-y-1/2 left-4 top-1/2 text-slate-400" size={18} />
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                       <input
                         type="tel"
                         value={phone}
                         onChange={e => setPhone(e.target.value)}
                         placeholder="+91 XXXXX XXXXX"
-                        className="w-full py-4 pl-12 pr-4 text-sm font-bold transition-all border-none outline-none bg-slate-50 rounded-2xl focus:ring-4 focus:ring-emerald-500/10"
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none text-sm text-gray-900"
                       />
                     </div>
                   </div>
 
                   {/* Check-in */}
                   <div>
-                    <label className="block mb-2 text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Check-In Date *</label>
+                    <label className="block mb-1.5 text-sm font-medium text-gray-700">Check-In Date *</label>
                     <input
                       type="date"
                       value={checkIn}
                       onChange={e => setCheckIn(e.target.value)}
                       min={today}
-                      className="w-full px-5 py-4 text-sm font-bold transition-all border-none outline-none bg-slate-50 rounded-2xl focus:ring-4 focus:ring-emerald-500/10"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none text-sm text-gray-900"
                     />
                   </div>
 
                   {/* Check-out */}
                   <div>
-                    <label className="block mb-2 text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Check-Out Date *</label>
+                    <label className="block mb-1.5 text-sm font-medium text-gray-700">Check-Out Date *</label>
                     <input
                       type="date"
                       value={checkOut}
                       onChange={e => setCheckOut(e.target.value)}
                       min={checkIn || today}
-                      className="w-full px-5 py-4 text-sm font-bold transition-all border-none outline-none bg-slate-50 rounded-2xl focus:ring-4 focus:ring-emerald-500/10"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none text-sm text-gray-900"
                     />
                   </div>
 
                   {/* Price */}
                   <div className="md:col-span-2">
-                    <label className="block mb-2 text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Estimated Price (optional)</label>
+                    <label className="block mb-1.5 text-sm font-medium text-gray-700">Estimated Price (optional)</label>
                     <div className="relative">
-                      <IndianRupee className="absolute -translate-y-1/2 left-4 top-1/2 text-slate-400" size={18} />
+                      <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                       <input
                         type="number"
                         value={price}
                         onChange={e => setPrice(e.target.value)}
-                        placeholder="₹ Amount"
+                        placeholder="Amount"
                         min="0"
-                        className="w-full py-4 pl-12 pr-4 text-sm font-bold transition-all border-none outline-none bg-slate-50 rounded-2xl focus:ring-4 focus:ring-emerald-500/10"
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none text-sm text-gray-900"
                       />
                     </div>
                   </div>
-
-                  <div className="flex gap-4 pt-4 md:col-span-2">
+                  
+                  <div className="md:col-span-2 flex justify-end gap-3 mt-4 pt-4 border-t border-gray-100">
                     <button 
                       type="button" 
                       onClick={() => { setShowForm(false); resetForm() }} 
-                      className="flex-1 py-4 font-black transition-all rounded-2xl text-slate-500 bg-slate-100 hover:bg-slate-200"
+                      className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
                     >
                       Cancel
                     </button>
                     <button 
                       type="submit" 
                       disabled={submitting} 
-                      className="flex items-center justify-center flex-1 gap-3 py-4 font-black text-white transition-all shadow-xl rounded-2xl bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200 disabled:opacity-50"
+                      className="flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium text-white transition-colors bg-emerald-600 rounded-md hover:bg-emerald-700 disabled:opacity-50 min-w-[140px]"
                     >
                       {submitting
-                        ? <><div className="w-5 h-5 border-white rounded-full border-3 border-t-transparent animate-spin" /> Processing...</>
+                        ? <><div className="w-4 h-4 border-2 border-white rounded-full border-t-transparent animate-spin" /> Processing...</>
                         : 'Confirm Booking'}
                     </button>
                   </div>
                 </form>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            </div>
+          </div>
+        )}
 
         {/* Bookings List */}
         {loading ? (
-          <div className="flex flex-col items-center justify-center gap-4 py-32">
-            <div className="w-12 h-12 border-4 rounded-full border-emerald-100 border-t-emerald-600 animate-spin" />
-            <p className="text-xs font-black tracking-widest uppercase text-emerald-700">Loading your bookings…</p>
+          <div className="flex justify-center py-20">
+            <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin" />
           </div>
         ) : error ? (
-          <div className="p-8 text-red-700 border border-red-100 bg-red-50 rounded-[2rem] font-bold text-center">
-            <AlertTriangle size={36} className="mx-auto mb-4" />
+          <div className="p-6 text-red-700 bg-red-50 border border-red-100 rounded-lg text-sm text-center">
+            <AlertTriangle size={24} className="mx-auto mb-2" />
             {error}
           </div>
         ) : bookings.length === 0 ? (
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="py-20 flex flex-col items-center justify-center text-center bg-white rounded-[3rem] border border-slate-100 shadow-sm"
-          >
-            <div className="w-20 h-20 bg-slate-50 rounded-[2rem] flex items-center justify-center mb-6 text-slate-300">
-              <Inbox size={40} />
+          <div className="flex flex-col items-center justify-center py-20 text-center bg-white border border-gray-200 rounded-lg shadow-sm">
+            <div className="flex items-center justify-center w-16 h-16 bg-gray-50 rounded-full mb-4 text-gray-400">
+              <Inbox size={32} />
             </div>
-            <h3 className="mb-2 text-2xl font-black text-slate-900">No bookings yet</h3>
-            <p className="max-w-xs px-4 mx-auto mb-8 font-medium text-slate-500">
+            <h3 className="mb-2 text-lg font-semibold text-gray-900">No bookings yet</h3>
+            <p className="mb-6 text-sm text-gray-500 max-w-sm">
               Find agricultural centers and book your visit today.
             </p>
-            <Link to="/places" className="px-10 py-4 font-black text-white transition-all shadow-lg bg-emerald-600 rounded-2xl shadow-emerald-200/50 hover:bg-emerald-700 active:scale-95">
+            <Link to="/places" className="px-5 py-2.5 text-sm font-medium text-white bg-emerald-600 rounded-md hover:bg-emerald-700 transition-colors">
               Browse Places
             </Link>
-          </motion.div>
+          </div>
         ) : (
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {bookings.map((b, i) => (
               <BookingCard
                 key={b._id || i}

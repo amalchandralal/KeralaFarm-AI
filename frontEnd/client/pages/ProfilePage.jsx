@@ -10,7 +10,8 @@ import {
   LogOut, 
   ChevronRight,
   Shield,
-  Clock
+  Clock,
+  Mic
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -29,24 +30,24 @@ const ProfilePage = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-[60vh]">
-        <div className="w-12 h-12 border-4 rounded-full border-emerald-100 border-t-emerald-600 animate-spin" />
+      <div className="flex justify-center items-center min-h-[60vh] bg-gray-50">
+        <div className="w-8 h-8 border-2 rounded-full border-gray-200 border-t-emerald-600 animate-spin" />
       </div>
     );
   }
 
   if (!user) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 px-4 text-center">
-        <div className="w-20 h-20 bg-slate-100 rounded-[2rem] flex items-center justify-center text-slate-300">
-          <UserIcon size={40} />
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 px-4 text-center bg-gray-50 font-sans">
+        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center text-gray-400">
+          <UserIcon size={32} />
         </div>
         <div>
-          <h2 className="mb-2 text-2xl font-black text-slate-900">Profile Locked</h2>
-          <p className="max-w-xs mx-auto mb-8 font-medium text-slate-500">
+          <h2 className="mb-2 text-xl font-semibold text-gray-900">Profile Locked</h2>
+          <p className="max-w-xs mx-auto mb-6 text-sm text-gray-500">
             Please login to your account to view and manage your profile details.
           </p>
-          <Link to="/login" className="px-10 btn-primary">
+          <Link to="/login" className="inline-flex items-center justify-center h-10 px-6 text-sm font-medium text-white bg-emerald-600 rounded-md hover:bg-emerald-700 transition-colors">
             Login to Account
           </Link>
         </div>
@@ -74,55 +75,47 @@ const ProfilePage = () => {
   ];
 
   return (
-    <div className="min-h-screen pt-12 pb-20 bg-stone-50">
-      <div className="max-w-2xl px-4 mx-auto sm:px-6">
+    <div className="min-h-screen py-12 bg-gray-50 font-sans">
+      <div className="max-w-3xl px-4 mx-auto sm:px-6">
         
         {/* Profile Header Card */}
         <motion.div 
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-[3rem] p-8 border border-slate-100 shadow-sm mb-6 relative overflow-hidden"
+          className="flex flex-col sm:flex-row items-center sm:items-start gap-6 p-8 mb-6 bg-white border border-gray-200 shadow-sm rounded-xl"
         >
-          {/* Decorative background element */}
-          <div className="absolute top-0 right-0 w-32 h-32 -mt-16 -mr-16 rounded-full opacity-50 bg-emerald-50" />
-          
-          <div className="relative z-10 flex flex-col items-center text-center">
-            <div className="w-24 h-24 bg-emerald-600 rounded-[2.5rem] flex items-center justify-center text-white font-black text-4xl shadow-xl shadow-emerald-200 mb-6 ring-4 ring-white">
-              {initial}
-            </div>
-            <h1 className="mb-1 text-3xl font-black tracking-tight text-slate-900">{name}</h1>
-            <div className="flex items-center gap-2 mb-4">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-black uppercase tracking-widest border border-emerald-100">
-                <Shield size={10} />
-                {role}
-              </span>
-              <span className="w-1.5 h-1.5 rounded-full bg-slate-200" />
-              <span className="text-xs font-bold text-slate-400">{email}</span>
+          <div className="flex items-center justify-center flex-shrink-0 w-20 h-20 text-2xl font-semibold text-emerald-700 bg-emerald-100 rounded-full">
+            {initial}
+          </div>
+          <div className="flex-1 text-center sm:text-left">
+            <h1 className="text-2xl font-semibold text-gray-900">{name}</h1>
+            <p className="mt-1 text-sm text-gray-500">{email}</p>
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 mt-4 text-xs font-medium text-gray-700 bg-gray-100 rounded-full">
+              <Shield size={12} className="text-gray-500" />
+              {role}
             </div>
           </div>
         </motion.div>
 
         {/* Details Section */}
         <motion.div 
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden mb-6"
+          transition={{ delay: 0.05 }}
+          className="overflow-hidden bg-white border border-gray-200 shadow-sm rounded-xl mb-6"
         >
-          <div className="p-6 border-b border-slate-50">
-            <h2 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Account Information</h2>
+          <div className="px-6 py-4 border-b border-gray-200 bg-gray-50/50">
+            <h2 className="text-sm font-medium text-gray-900">Account Information</h2>
           </div>
-          <div className="divide-y divide-slate-50">
+          <div className="divide-y divide-gray-100">
             {details.map((item, idx) => (
-              <div key={idx} className="flex items-center justify-between p-6 transition-colors hover:bg-slate-50/50">
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center justify-center w-10 h-10 bg-slate-50 rounded-xl text-slate-400">
-                    <item.icon size={18} />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">{item.label}</p>
-                    <p className="text-sm font-bold text-slate-700">{item.value}</p>
-                  </div>
+              <div key={idx} className="flex items-center p-6 sm:px-8">
+                <div className="flex items-center justify-center flex-shrink-0 w-8 h-8 text-gray-400 bg-gray-50 rounded-lg">
+                  <item.icon size={16} />
+                </div>
+                <div className="ml-4">
+                  <p className="text-xs font-medium text-gray-500">{item.label}</p>
+                  <p className="mt-0.5 text-sm text-gray-900">{item.value}</p>
                 </div>
               </div>
             ))}
@@ -133,42 +126,46 @@ const ProfilePage = () => {
         <div className="grid grid-cols-1 gap-4 mb-8 sm:grid-cols-2">
           <Link 
             to="/bookings"
-            className="flex items-center justify-between p-6 transition-all bg-white border shadow-sm group rounded-2xl border-slate-100 hover:border-emerald-200 hover:bg-emerald-50/30"
+            className="flex items-center justify-between p-5 transition-colors bg-white border border-gray-200 shadow-sm rounded-xl hover:border-gray-300 hover:bg-gray-50"
           >
             <div className="flex items-center gap-4">
-              <div className="flex items-center justify-center w-12 h-12 transition-transform bg-emerald-100 rounded-xl text-emerald-600 group-hover:scale-110">
+              <div className="text-gray-500">
                 <Calendar size={20} />
               </div>
-              <span className="font-black text-slate-700">My Bookings</span>
+              <span className="text-sm font-medium text-gray-900">My Bookings</span>
             </div>
-            <ChevronRight size={18} className="transition-all text-slate-300 group-hover:text-emerald-500 group-hover:translate-x-1" />
+            <ChevronRight size={16} className="text-gray-400" />
           </Link>
 
           <Link 
             to="/voice"
-            className="flex items-center justify-between p-6 transition-all bg-white border shadow-sm group rounded-2xl border-slate-100 hover:border-emerald-200 hover:bg-emerald-50/30"
+            className="flex items-center justify-between p-5 transition-colors bg-white border border-gray-200 shadow-sm rounded-xl hover:border-gray-300 hover:bg-gray-50"
           >
             <div className="flex items-center gap-4">
-              <div className="flex items-center justify-center w-12 h-12 transition-transform bg-emerald-100 rounded-xl text-emerald-600 group-hover:scale-110">
-                <Shield size={20} />
+              <div className="text-gray-500">
+                <Mic size={20} />
               </div>
-              <span className="font-black text-slate-700">Voice AI</span>
+              <span className="text-sm font-medium text-gray-900">Voice AI</span>
             </div>
-            <ChevronRight size={18} className="transition-all text-slate-300 group-hover:text-emerald-500 group-hover:translate-x-1" />
+            <ChevronRight size={16} className="text-gray-400" />
           </Link>
         </div>
 
         {/* Logout Button */}
-        <motion.button 
+        <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          onClick={handleLogout}
-          className="flex items-center justify-center w-full gap-3 py-5 font-black text-red-500 transition-all border border-red-100 rounded-2xl bg-red-50 hover:bg-red-100"
+          transition={{ delay: 0.1 }}
+          className="flex justify-center"
         >
-          <LogOut size={20} />
-          Logout from Account
-        </motion.button>
+          <button 
+            onClick={handleLogout}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 transition-colors bg-red-50 rounded-lg hover:bg-red-100"
+          >
+            <LogOut size={16} />
+            Logout from Account
+          </button>
+        </motion.div>
 
       </div>
     </div>

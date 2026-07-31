@@ -1,174 +1,43 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, Square, Send, Loader2, Globe, X } from 'lucide-react';
-import { useVoice } from '../hooks/useVoice';
-import { askVoiceAssistant } from '../services/api';
+import React from 'react';
+import VoiceAssistantWidget from '../components/VoiceAssistantWidget';
+import { Info } from 'lucide-react';
 
-const LANG = 'en-IN';
-
-const VoiceAssistantWidget = () => {
-  const [inputText, setInputText] = useState('');
-  const [response, setResponse] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [error, setError] = useState('');
-
-  const {
-    isListening,
-    interimText,
-    startListening,
-    stopListening,
-    speak,
-    stopSpeaking
-  } = useVoice({
-    lang: LANG,
-    onResult: (text) => handleTranscriptionComplete(text),
-    onError: (msg) => {
-      setError(msg);
-      setIsProcessing(false);
-    },
-  });
-
-  const handleTranscriptionComplete = async (text) => {
-    if (!text) return;
-    setIsProcessing(true);
-    setError('');
-    setResponse("");
-
-    try {
-      const data = await askVoiceAssistant(text);
-      setResponse(data.answer);
-      speak(data.answer, LANG);
-    } catch (err) {
-      setError("Failed to get response. Try again.");
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const handleManualSend = () => {
-    if (!inputText.trim()) return;
-    handleTranscriptionComplete(inputText);
-    setInputText('');
-  };
-
+const VoicePage = () => {
   return (
-    <div className="w-full max-w-md p-4 mx-auto">
-      <div className="bg-white rounded-[3rem] p-8 shadow-2xl border border-slate-100 relative overflow-hidden min-h-[550px] flex flex-col">
+    <div className="min-h-[85vh] py-12 px-4 sm:px-6 bg-gray-50 font-sans">
+      <div className="max-w-2xl mx-auto">
+        
+        {/* Header Section */}
+        <div className="mb-8 text-center">
+          <h1 className="text-3xl font-semibold tracking-tight text-gray-900">
+            Voice Assistant
+          </h1>
+          <p className="mt-2 text-sm text-gray-500">
+            Ask questions about farming, crops, and diseases using your voice.
+          </p>
+        </div>
 
-        {/* Interaction Area */}
-        <div className="flex flex-col items-center justify-center flex-grow">
-          <AnimatePresence mode="wait">
-            {isProcessing ? (
-              <motion.div
-                key="processing"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                className="flex flex-col items-center gap-4"
-              >
-                <div className="relative">
-                  <div className="absolute inset-0 rounded-full bg-emerald-100 animate-ping opacity-20" />
-                  <Loader2 className="w-16 h-16 text-emerald-600 animate-spin" />
-                </div>
-                <p className="text-sm font-bold tracking-widest uppercase text-emerald-600 animate-pulse">
-                  Analyzing Question...
-                </p>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="idle"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                className="flex flex-col items-center w-full text-center"
-              >
-                <button
-                  onClick={isListening ? stopListening : startListening}
-                  className={`
-                    relative h-32 w-32 rounded-full flex items-center justify-center transition-all duration-500 mb-6
-                    ${isListening
-                      ? 'bg-red-500 shadow-[0_0_40px_rgba(239,68,68,0.4)]'
-                      : 'bg-emerald-500 shadow-[0_0_40px_rgba(16,185,129,0.3)] hover:scale-105'}
-                  `}
-                >
-                  {isListening && (
-                    <div className="absolute inset-0 border-4 rounded-full border-white/30 animate-ping" />
-                  )}
-                  {isListening ? (
-                    <Square className="w-10 h-10 text-white fill-current" />
-                  ) : (
-                    <Mic className="w-12 h-12 text-white" />
-                  )}
-                </button>
-
-                <p className="flex items-center justify-center gap-2 text-sm text-slate-500">
-                  {isListening ? (
-                    <span className="font-medium text-red-500 animate-pulse">Listening to you...</span>
-                  ) : (
-                    <>Tap <Mic size={14} className="text-emerald-600" /> to speak your farming question</>
-                  )}
-                </p>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <div className="w-full mt-6 space-y-4">
-            {isListening && interimText && (
-              <p className="text-sm italic text-center text-slate-400">"{interimText}..."</p>
-            )}
-
-            {error && <p className="text-xs text-center text-red-500">{error}</p>}
-
-            {response && !isProcessing && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                className="bg-[#059669] text-white p-5 rounded-2xl shadow-lg shadow-emerald-100 relative"
-              >
-                <p className="text-sm leading-relaxed">{response}</p>
-                <button
-                  onClick={stopSpeaking}
-                  className="absolute p-1 bg-white border rounded-full shadow-md -top-2 -right-2 text-emerald-600"
-                >
-                  <X size={12} />
-                </button>
-              </motion.div>
-            )}
+        {/* Tips Banner */}
+        <div className="flex items-start gap-3 p-4 mb-8 border border-gray-200 bg-white rounded-lg shadow-sm">
+          <Info className="flex-shrink-0 w-5 h-5 text-gray-400 mt-0.5" />
+          <div>
+            <h3 className="text-sm font-medium text-gray-900">Quick Tips</h3>
+            <ul className="mt-1 space-y-1 text-sm text-gray-500 list-disc list-inside">
+              <li>Tap the microphone button to start speaking</li>
+              <li>Speak clearly in a quiet environment</li>
+              <li>You can also type your question if preferred</li>
+            </ul>
           </div>
         </div>
 
-        <div className="mt-8">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="flex-grow h-px bg-slate-100" />
-            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-300">or type your question</span>
-            <div className="flex-grow h-px bg-slate-100" />
-          </div>
-
-          <div className="relative">
-            <input
-              type="text"
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleManualSend()}
-              placeholder="Type your question..."
-              className="w-full py-4 pl-6 pr-16 text-sm border bg-slate-50 border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-            />
-            <button
-              onClick={handleManualSend}
-              disabled={!inputText.trim() || isProcessing}
-              className="absolute flex items-center justify-center w-12 text-white transition-colors right-2 top-2 bottom-2 bg-emerald-600 rounded-xl hover:bg-emerald-700 disabled:bg-slate-300"
-            >
-              <Send size={18} />
-            </button>
-          </div>
-
-          <div className="mt-6 flex justify-center items-center gap-4 text-[9px] font-bold uppercase tracking-widest text-slate-400">
-            <div className="flex items-center gap-1">
-              <Globe size={10} />
-              <span>Neural Engine v3.1</span>
-            </div>
-            <div className="w-1 h-1 rounded-full bg-slate-300" />
-            <span>Real-time Sync</span>
-          </div>
+        {/* Voice Widget Component */}
+        <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
+          <VoiceAssistantWidget />
         </div>
+
       </div>
     </div>
   );
 };
 
-export default VoiceAssistantWidget;
+export default VoicePage;

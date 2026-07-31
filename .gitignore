@@ -9,3 +9,5 @@ api/.env
 *.log
 dist/
 uploads/
+BackEnd/.env
+frontEnd/.env
