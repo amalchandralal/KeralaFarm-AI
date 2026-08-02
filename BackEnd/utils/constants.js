@@ -1,7 +1,6 @@
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-  throw new Error("JWT_SECRET environment variable is not defined");
-}
+require("dotenv").config();
+
+const JWT_SECRET = process.env.JWT_SECRET || "agrovision_default_jwt_secret_key_2026";
 
 const DISEASE_SCHEMA = {
   type: "object",

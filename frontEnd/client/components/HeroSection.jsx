@@ -42,11 +42,11 @@ const HeroSection = () => {
   }, []);
 
   return (
-    <section className="relative overflow-hidden bg-gray-50">
+    <section className="relative overflow-hidden bg-gray-50 dark:bg-slate-950 transition-colors duration-200">
       {/* Decorative subtle pattern */}
       <div className="absolute inset-0 z-0 pointer-events-none">
-        <div className="absolute top-0 right-0 w-1/2 h-1/2 bg-emerald-50 rounded-full blur-[100px] opacity-40 translate-x-1/4 -translate-y-1/4" />
-        <div className="absolute bottom-0 left-0 w-1/3 h-1/3 bg-gray-100 rounded-full blur-[80px] opacity-60 -translate-x-1/4 translate-y-1/4" />
+        <div className="absolute top-0 right-0 w-1/2 h-1/2 bg-emerald-50 dark:bg-emerald-950/20 rounded-full blur-[100px] opacity-40 translate-x-1/4 -translate-y-1/4" />
+        <div className="absolute bottom-0 left-0 w-1/3 h-1/3 bg-gray-100 dark:bg-slate-900/40 rounded-full blur-[80px] opacity-60 -translate-x-1/4 translate-y-1/4" />
       </div>
 
       <div className="relative z-10 grid items-center max-w-7xl gap-12 mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-20 lg:pt-16 lg:pb-24 lg:grid-cols-2">
@@ -56,31 +56,31 @@ const HeroSection = () => {
           transition={{ duration: 0.6, ease: "easeOut" }}
           className="flex flex-col items-center text-center lg:items-start lg:text-left"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 mb-8 text-base font-medium rounded-full bg-white border border-gray-200 text-gray-600 shadow-sm">
+          <div className="inline-flex items-center gap-2 px-4 py-2 mb-8 text-base font-medium rounded-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-600 dark:text-slate-300 shadow-sm">
             <span className="flex w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
             AI-Powered Farm Assistant
           </div>
           
-          <h1 className="mb-8 text-6xl font-extrabold tracking-tight text-gray-900 md:text-7xl lg:text-[5.5rem] leading-[1.1]">
+          <h1 className="mb-8 text-6xl font-extrabold tracking-tight text-gray-900 dark:text-slate-50 md:text-7xl lg:text-[5.5rem] leading-[1.1]">
             Smart Farming, <br className="hidden lg:block" />
-            <span className="text-emerald-600">Redefined.</span>
+            <span className="text-emerald-600 dark:text-emerald-400">Redefined.</span>
           </h1>
           
-          <p className="max-w-2xl mb-10 text-xl leading-relaxed text-gray-500 sm:text-2xl">
+          <p className="max-w-2xl mb-10 text-xl leading-relaxed text-gray-500 dark:text-slate-400 sm:text-2xl">
             A voice-first intelligent assistant for Kerala's farmers. Get instant help with crop questions, disease diagnosis, and daily advisory.
           </p>
           
           <div className="flex flex-col w-full gap-4 sm:flex-row sm:w-auto">
             <Link 
               to="/voice" 
-              className="flex items-center justify-center gap-3 px-8 py-4 text-lg font-semibold text-white transition-all bg-emerald-600 rounded-lg shadow-sm hover:bg-emerald-700 hover:shadow-md"
+              className="flex items-center justify-center gap-3 px-8 py-4 text-lg font-semibold text-white transition-all bg-emerald-600 dark:bg-emerald-500 rounded-lg shadow-sm hover:bg-emerald-700 dark:hover:bg-emerald-600 hover:shadow-md"
             >
               <Mic className="w-6 h-6" />
               Try Voice Assistant
             </Link>
             <Link 
               to="/scan" 
-              className="flex items-center justify-center gap-3 px-8 py-4 text-lg font-semibold transition-all bg-white border border-gray-200 rounded-lg text-gray-900 shadow-sm hover:bg-gray-50 hover:text-emerald-600"
+              className="flex items-center justify-center gap-3 px-8 py-4 text-lg font-semibold transition-all bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-lg text-gray-900 dark:text-slate-100 shadow-sm hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-emerald-600 dark:hover:text-emerald-400"
             >
               <Scan className="w-6 h-6" />
               Scan a Crop
@@ -94,14 +94,14 @@ const HeroSection = () => {
           transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
           className="relative hidden lg:block"
         >
-          <div className="relative z-10 overflow-hidden bg-white border border-gray-200 rounded-2xl shadow-xl">
+          <div className="relative z-10 overflow-hidden bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl shadow-xl">
             <img 
               src="https://images.unsplash.com/photo-1523348837708-15d4a09cfac2?auto=format&fit=crop&q=80&w=1000" 
               alt="Farming in Kerala" 
               className="object-cover w-full h-[600px]"
               referrerPolicy="no-referrer"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-gray-900/20 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-gray-900/30 dark:from-slate-950/60 to-transparent" />
           </div>
           
           {/* Floating Weather Widget */}
@@ -109,16 +109,16 @@ const HeroSection = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.6 }}
-            className="absolute z-20 flex items-center gap-4 p-4 bg-white border border-gray-200 shadow-lg -bottom-6 -left-6 rounded-xl backdrop-blur-sm"
+            className="absolute z-20 flex items-center gap-4 p-4 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-lg -bottom-6 -left-6 rounded-xl backdrop-blur-sm"
           >
-            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-emerald-50">
-              <CloudSun className="w-6 h-6 text-emerald-600" />
+            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-emerald-50 dark:bg-emerald-950/50">
+              <CloudSun className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
             </div>
             <div>
-              <p className="text-xl font-bold text-gray-900">
+              <p className="text-xl font-bold text-gray-900 dark:text-slate-100">
                 {weather ? `${weather.temp}°C` : '--°C'}
               </p>
-              <p className="text-xs font-medium text-gray-500">
+              <p className="text-xs font-medium text-gray-500 dark:text-slate-400">
                 {weather ? weather.location : 'Detecting...'}
               </p>
             </div>
@@ -129,4 +129,4 @@ const HeroSection = () => {
   );
 };
 
-export default HeroSection;
+export default HeroSection;

@@ -71,3 +71,9 @@ export const getHourlyForecast = async (lat, lon) => {
   const res = await api.get(`/forecast/hourly${params}`);
   return res.data;
 };
+
+export const getNotifications = async (lat, lon) => {
+  const params = lat && lon ? `?lat=${lat}&lon=${lon}` : "";
+  const res = await api.get(`/notifications${params}`);
+  return res.data;
+};

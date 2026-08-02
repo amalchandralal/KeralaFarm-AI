@@ -18,6 +18,7 @@ const {
   deleteEntry,
 } = require("../controllers/inputEntryController");
 const { getTTS } = require("../controllers/ttsController");
+const { getNotifications } = require("../controllers/notificationController");
 
 // Public routes
 router.get("/places", getPlaces);
@@ -26,6 +27,7 @@ router.get("/aqi", getAQI);
 router.get("/forecast/hourly", getHourlyForecast);
 router.get("/market-prices", getMarketPrices);
 router.get("/tts", getTTS);
+router.get("/notifications", getNotifications);
 
 // Protected routes — require authentication
 router.post("/bookings", requireAuth, createBooking);

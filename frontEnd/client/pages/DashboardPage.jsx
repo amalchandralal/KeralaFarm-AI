@@ -26,13 +26,17 @@ const DynamicIcon = ({ name, className, size = 20 }) => {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const severityBorder = { high: 'border-l-rose-500', medium: 'border-l-amber-500', low: 'border-l-emerald-500' }
-const severityIconColor = { high: 'text-rose-500 bg-rose-50', medium: 'text-amber-500 bg-amber-50', low: 'text-emerald-500 bg-emerald-50' }
+const severityIconColor = { 
+  high: 'text-rose-500 bg-rose-50 dark:bg-rose-950/40', 
+  medium: 'text-amber-500 bg-amber-50 dark:bg-amber-950/40', 
+  low: 'text-emerald-500 bg-emerald-50 dark:bg-emerald-950/40' 
+}
 
 const aqiColor = (aqi) => {
-  if (aqi <= 50)  return 'text-emerald-600 bg-emerald-50 border-emerald-100'
-  if (aqi <= 100) return 'text-amber-600 bg-amber-50 border-amber-100'
-  if (aqi <= 150) return 'text-orange-600 bg-orange-50 border-orange-100'
-  return 'text-rose-600 bg-rose-50 border-rose-100'
+  if (aqi <= 50)  return 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-100 dark:border-emerald-900/50'
+  if (aqi <= 100) return 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border-amber-100 dark:border-amber-900/50'
+  if (aqi <= 150) return 'text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/40 border-orange-100 dark:border-orange-900/50'
+  return 'text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 border-rose-100 dark:border-rose-900/50'
 }
 
 // ─── Location Permission Banner ───────────────────────────────────────────────
@@ -40,116 +44,123 @@ const LocationBanner = ({ denied, error, onRetry }) => {
   if (!error) return null
   return (
     <div className={`rounded-2xl p-4 mb-6 flex items-start sm:items-center gap-3 text-sm transition-all duration-300 animate-in fade-in slide-in-from-top-4 ${
-      denied ? 'bg-amber-50 border border-amber-200/60' : 'bg-blue-50 border border-blue-200/60'
+      denied 
+        ? 'bg-amber-50 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-800/40' 
+        : 'bg-blue-50 dark:bg-blue-950/30 border border-blue-200/60 dark:border-blue-800/40'
     }`}>
       <MapPin size={20} className={`mt-0.5 sm:mt-0 flex-shrink-0 ${denied ? 'text-amber-500' : 'text-blue-500'}`} />
       <div className="flex-1">
-        <p className={`font-medium ${denied ? 'text-amber-800' : 'text-blue-800'}`}>{error}</p>
+        <p className={`font-medium ${denied ? 'text-amber-800 dark:text-amber-300' : 'text-blue-800 dark:text-blue-300'}`}>{error}</p>
         {denied && (
-          <p className="text-xs text-amber-600/80 mt-1">
+          <p className="text-xs text-amber-600/80 dark:text-amber-400/80 mt-1">
             Click the lock icon in your address bar to allow location access.
           </p>
         )}
       </div>
-      <button onClick={onRetry} className="flex-shrink-0 px-3 py-1.5 text-xs font-semibold bg-white rounded-lg shadow-sm hover:shadow transition-shadow text-slate-700">
-        Retry
+      <button onClick={onRetry} className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors ${
+        denied 
+          ? 'bg-amber-200/60 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200 hover:bg-amber-200' 
+          : 'bg-blue-200/60 dark:bg-blue-900/40 text-blue-900 dark:text-blue-200 hover:bg-blue-200'
+      }`}>
+        <RefreshCw size={14} /> Retry
       </button>
     </div>
   )
 }
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
-export default function DashboardPage() {
-  const { user }                                          = useAuth()
-  const { location, loading: locLoading, error: locErr,
-          permissionDenied, refresh: retryLocation }      = useLocation()
+// ─── Main Component ───────────────────────────────────────────────────────────
+const DashboardPage = () => {
+  const { user } = useAuth()
+  const { location, loading: locLoading, error: locError, permissionDenied, refresh: retryLocation } = useLocation()
 
-  const [weather,   setWeather]   = useState(null)
-  const [alerts,    setAlerts]    = useState([])
-  const [recs,      setRecs]      = useState([])
-  const [hourly,    setHourly]    = useState([])
-  const [aqi,       setAqi]       = useState(null)
-  const [loading,   setLoading]   = useState(false)
-  const [apiError,  setApiError]  = useState('')
-  const [crop,      setCrop]      = useState('all')
+  const [dashboardData, setDashboardData] = useState(null)
+  const [aqiData, setAqiData] = useState(null)
+  const [hourly, setHourly] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [apiError, setApiError] = useState(null)
 
   useEffect(() => {
-    if (!location) return
-    fetchAll(location.lat, location.lon)
-  }, [location])
+    if (locLoading) return
 
-  const fetchAll = async (lat, lon) => {
-    setLoading(true)
-    setApiError('')
-    try {
-      const [dash, aqiData, forecastData] = await Promise.allSettled([
-        getDashboard(lat, lon),
-        getAQI(lat, lon),
-        getHourlyForecast(lat, lon),
-      ])
+    const lat = location?.lat
+    const lon = location?.lon
 
-      if (dash.status === 'fulfilled') {
-        setWeather(dash.value.weather)
-        setAlerts(dash.value.alerts  || [])
-        setRecs(dash.value.recommendations || [])
-      } else {
-        setApiError('Weather data unavailable. Check your backend connection.')
+    const loadAll = async () => {
+      setIsLoading(true)
+      setApiError(null)
+      try {
+        const [dashRes, aqiRes, hourlyRes] = await Promise.allSettled([
+          getDashboard(lat, lon),
+          getAQI(lat, lon),
+          getHourlyForecast(lat, lon)
+        ])
+
+        if (dashRes.status === 'fulfilled') setDashboardData(dashRes.value)
+        else setApiError(dashRes.reason?.response?.data?.error || 'Weather unavailable')
+
+        if (aqiRes.status === 'fulfilled') setAqiData(aqiRes.value)
+        if (hourlyRes.status === 'fulfilled') setHourly(hourlyRes.value || [])
+      } catch (err) {
+        console.error('Dashboard load error:', err)
+      } finally {
+        setIsLoading(false)
       }
-
-      if (aqiData.status === 'fulfilled')    setAqi(aqiData.value)
-      if (forecastData.status === 'fulfilled') setHourly(forecastData.value?.hourly || forecastData.value || [])
-
-    } catch {
-      setApiError('Failed to load dashboard. Please try again.')
-    } finally {
-      setLoading(false)
     }
-  }
 
-  const time      = new Date()
-  const greeting  = time.getHours() < 12 ? 'Good Morning' : time.getHours() < 17 ? 'Good Afternoon' : 'Good Evening'
-  const temp      = weather ? Math.round(weather?.main?.temp) : '—'
-  const humidity  = weather ? weather?.main?.humidity : '—'
-  const condition = weather ? weather?.weather?.[0]?.description : 'Loading...'
-  const windSpeed = weather ? Math.round(weather?.wind?.speed * 3.6) : '—'
-  const rainfall  = weather ? (weather?.rain?.['1h'] ?? weather?.rain?.['3h'] ?? 0) : 0
+    loadAll()
+  }, [location, locLoading])
 
-  const isLoading = locLoading || loading
+  if (!user) return <Navigate to="/login" />
 
-  if (!isLoading && !user) {
-    return <Navigate to="/login" replace />
-  }
+  const weather = dashboardData?.weather
+  const locationName =
+    (typeof dashboardData?.location === 'string' ? dashboardData.location : dashboardData?.location?.name) ||
+    (location?.label ? location.label : null) ||
+    (location?.lat != null && location?.lon != null ? `${location.lat.toFixed(2)}, ${location.lon.toFixed(2)}` : 'Kerala')
+  const alerts = dashboardData?.cropAlerts || []
+  const recommendations = dashboardData?.recommendations || []
+  const marketSummary = dashboardData?.marketPricesSummary || []
+
+  const temp = Math.round(weather?.main?.temp ?? 28)
+  const condition = weather?.weather?.[0]?.description ?? 'Clear Sky'
+  const humidity = weather?.main?.humidity ?? 75
+  const windSpeed = Math.round(weather?.wind?.speed ?? 12)
+  const rainfall = dashboardData?.rainfall ?? 0
 
   return (
-    <div className="min-h-screen bg-slate-50/50 pt-24 pb-24 px-4 sm:px-6 lg:px-8 font-sans selection:bg-emerald-100 selection:text-emerald-900">
-      <div className="max-w-6xl mx-auto">
-
-        <LocationBanner denied={permissionDenied} error={locErr} onRetry={retryLocation} />
-
-        {/* Header / Greeting */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans text-slate-800 dark:text-slate-200 pb-16 transition-colors duration-200">
+      
+      {/* ── Top App Bar Header ── */}
+      <header className="bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800 sticky top-16 z-30 transition-colors duration-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight mb-2">
-              {greeting}, {user?.name?.split(' ')[0] || 'Farmer'}
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">
+              Welcome back, <span className="text-emerald-600 dark:text-emerald-400">{user?.name?.split(' ')[0] || 'Farmer'}</span>
             </h1>
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-white border border-slate-200/60 rounded-full text-sm text-slate-500 shadow-sm">
-              <MapPin size={14} className="text-emerald-500" />
-              {isLoading ? (
-                <span className="animate-pulse">Detecting your location…</span>
-              ) : (
-                <span className="font-medium text-slate-700">
-                  {location?.source === 'gps' ? location.label : weather?.name || location?.label || 'Unknown location'}
-                </span>
-              )}
-              <button onClick={retryLocation} className="ml-1 p-1 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-colors">
-                <RefreshCw size={12} />
-              </button>
-            </div>
+            <p className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mt-0.5">
+              <MapPin size={16} className="text-emerald-600 dark:text-emerald-400" />
+              <span>{locationName}</span>
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button onClick={retryLocation} className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+              <RefreshCw size={18} className={locLoading ? 'animate-spin' : ''} />
+            </button>
+            <Link to="/voice" className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all">
+              <Mic size={16} />
+              <span>Ask Voice Assistant</span>
+            </Link>
           </div>
         </div>
+      </header>
+
+      {/* ── Content Container ── */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        
+        <LocationBanner denied={permissionDenied} error={locError} onRetry={retryLocation} />
 
         {apiError && (
-          <div className="flex items-center gap-3 p-4 mb-8 text-sm font-medium text-rose-700 bg-rose-50 border border-rose-200/60 rounded-2xl">
+          <div className="flex items-center gap-3 p-4 mb-8 text-sm font-medium text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/40 border border-rose-200/60 dark:border-rose-900/40 rounded-2xl">
             <AlertTriangle size={18} /> {apiError}
           </div>
         )}
@@ -161,7 +172,7 @@ export default function DashboardPage() {
           <div className="lg:col-span-8 space-y-6">
             
             {/* Hero Weather Card */}
-            <div className="relative overflow-hidden bg-gradient-to-br from-emerald-600 to-teal-800 rounded-3xl p-6 sm:p-8 shadow-lg shadow-emerald-900/10 text-white">
+            <div className="relative overflow-hidden bg-gradient-to-br from-emerald-600 to-teal-800 dark:from-emerald-800 dark:to-teal-950 rounded-3xl p-6 sm:p-8 shadow-lg shadow-emerald-900/10 text-white">
               <div className="absolute top-0 right-0 -mt-16 -mr-16 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl mix-blend-overlay"></div>
               <div className="absolute bottom-0 left-0 -mb-16 -ml-16 w-48 h-48 bg-emerald-400 opacity-20 rounded-full blur-2xl mix-blend-overlay"></div>
               
@@ -209,22 +220,22 @@ export default function DashboardPage() {
               )}
             </div>
 
-            {/* Quick Actions (Moved below weather for immediate access) */}
+            {/* Quick Actions */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {[
-                { to: '/voice',   icon: Mic,       label: 'Ask AI',       color: 'bg-blue-50 text-blue-600 border-blue-100', hover: 'hover:border-blue-300 hover:shadow-blue-900/5' },
-                { to: '/scan',    icon: Camera,    label: 'Scan Crop',    color: 'bg-emerald-50 text-emerald-600 border-emerald-100', hover: 'hover:border-emerald-300 hover:shadow-emerald-900/5' },
-                { to: '/tracker', icon: BarChart3, label: 'Tracker',      color: 'bg-indigo-50 text-indigo-600 border-indigo-100', hover: 'hover:border-indigo-300 hover:shadow-indigo-900/5' },
-                { to: '/offline', icon: Download,  label: 'Offline Data', color: 'bg-slate-100 text-slate-600 border-slate-200', hover: 'hover:border-slate-300 hover:shadow-slate-900/5' },
+                { to: '/voice',   icon: Mic,       label: 'Ask AI',       color: 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-900/50', hover: 'hover:border-blue-300 dark:hover:border-blue-700' },
+                { to: '/scan',    icon: Camera,    label: 'Scan Crop',    color: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/50', hover: 'hover:border-emerald-300 dark:hover:border-emerald-700' },
+                { to: '/tracker', icon: BarChart3, label: 'Tracker',      color: 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border-indigo-100 dark:border-indigo-900/50', hover: 'hover:border-indigo-300 dark:hover:border-indigo-700' },
+                { to: '/offline', icon: Download,  label: 'Offline Data', color: 'bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700', hover: 'hover:border-slate-300 dark:hover:border-slate-600' },
               ].map(a => {
                 const Icon = a.icon
                 return (
                   <Link key={a.to} to={a.to}
-                    className={`group relative overflow-hidden bg-white border rounded-2xl p-4 sm:p-5 flex flex-col items-center justify-center gap-3 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md ${a.hover}`}>
+                    className={`group relative overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 flex flex-col items-center justify-center gap-3 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md ${a.hover}`}>
                     <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 ${a.color}`}>
                       <Icon size={22} />
                     </div>
-                    <span className="text-sm font-semibold text-slate-700">{a.label}</span>
+                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{a.label}</span>
                   </Link>
                 )
               })}
@@ -232,136 +243,131 @@ export default function DashboardPage() {
 
             {/* Hourly Forecast */}
             {hourly.length > 0 && (
-              <div className="bg-white rounded-3xl p-6 border border-slate-200/60 shadow-sm">
+              <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/60 dark:border-slate-800 shadow-sm">
                 <div className="flex items-center justify-between mb-5">
-                  <h2 className="text-lg font-bold text-slate-900">Today's Forecast</h2>
+                  <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Today's Forecast</h2>
                 </div>
                 <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2 scrollbar-hide -mx-2 px-2">
                   {hourly.slice(0, 12).map((h, i) => (
-                    <div key={i} className="snap-start flex-shrink-0 bg-slate-50 border border-slate-100 rounded-2xl p-4 min-w-[90px] flex flex-col items-center justify-between transition-colors hover:bg-emerald-50 hover:border-emerald-100 cursor-default">
-                      <p className="text-sm font-semibold text-slate-500 mb-3">{h.time}</p>
-                      <div className="mb-3 text-slate-700">
+                    <div key={i} className="snap-start flex-shrink-0 bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/60 rounded-2xl p-4 min-w-[90px] flex flex-col items-center justify-between transition-colors hover:bg-emerald-50 dark:hover:bg-emerald-950/30 hover:border-emerald-100 dark:hover:border-emerald-800/50 cursor-default">
+                      <p className="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-3">{h.time}</p>
+                      <div className="mb-3 text-slate-700 dark:text-slate-300">
                         <DynamicIcon name={h.icon} size={28} />
                       </div>
-                      <p className="text-lg font-bold text-slate-900 stat-value">{Math.round(h.temp)}°</p>
+                      <p className="text-lg font-bold text-slate-900 dark:text-slate-100 stat-value">{Math.round(h.temp)}°</p>
                     </div>
                   ))}
                 </div>
               </div>
             )}
+
+            {/* Recommendations Section */}
+            {recommendations.length > 0 && (
+              <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/60 dark:border-slate-800 shadow-sm">
+                <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
+                  <Zap className="text-emerald-500" size={20} />
+                  Recommended Farming Actions
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {recommendations.map((rec, idx) => (
+                    <div key={idx} className="bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 rounded-2xl p-4 flex gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0">
+                        <DynamicIcon name={rec.icon} size={20} />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-sm mb-1">{rec.title}</h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{rec.description}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
           </div>
-          
-          {/* ─── RIGHT COLUMN (Stats, Alerts, Recs) ─── */}
+
+          {/* ─── RIGHT COLUMN (AQI, Alerts, Market Summary) ─── */}
           <div className="lg:col-span-4 space-y-6">
             
-            {/* Secondary Stats (AQI & UV) */}
-            <div className="grid grid-cols-2 gap-4">
-              {isLoading ? (
-                <>
-                  <div className="animate-pulse h-28 bg-white border border-slate-200/60 rounded-3xl"></div>
-                  <div className="animate-pulse h-28 bg-white border border-slate-200/60 rounded-3xl"></div>
-                </>
-              ) : (
-                <>
-                  {aqi && (
-                    <div className="bg-white rounded-3xl border border-slate-200/60 shadow-sm p-5 flex flex-col justify-between group hover:shadow-md hover:border-slate-300 transition-all">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center border ${aqiColor(aqi.aqi)}`}>
-                          <Wind size={18} />
-                        </div>
-                        <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">AQI</span>
-                      </div>
-                      <div>
-                        <div className="flex items-baseline gap-1.5 mb-0.5">
-                          <span className="text-3xl font-bold text-slate-900 stat-value">{aqi.aqi}</span>
-                        </div>
-                        <p className="text-sm font-medium text-slate-500">{aqi.label}</p>
-                      </div>
-                    </div>
-                  )}
-                  {/* UV Index Placeholder (can be wired to real data later) */}
-                  <div className="bg-white rounded-3xl border border-slate-200/60 shadow-sm p-5 flex flex-col justify-between group hover:shadow-md hover:border-slate-300 transition-all">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center border bg-orange-50 border-orange-100 text-orange-500">
-                        <Sun size={18} />
-                      </div>
-                      <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">UV</span>
-                    </div>
-                    <div>
-                      <div className="flex items-baseline gap-1.5 mb-0.5">
-                        <span className="text-3xl font-bold text-slate-900 stat-value">4.2</span>
-                      </div>
-                      <p className="text-sm font-medium text-slate-500">Moderate</p>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Crop Alerts */}
-            {alerts.length > 0 && (
-              <div className="bg-white rounded-3xl border border-slate-200/60 shadow-sm p-6">
-                <div className="flex items-center justify-between mb-5">
-                  <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                    <Siren size={20} className="text-rose-500" /> 
-                    Alerts
-                  </h2>
+            {/* AQI Widget */}
+            {aqiData && (
+              <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/60 dark:border-slate-800 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Air Quality (AQI)</span>
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold border ${aqiColor(aqiData.aqi)}`}>
+                    {aqiData.status}
+                  </span>
                 </div>
-                
-                {/* Filter Pills */}
-                <div className="flex gap-2 overflow-x-auto pb-3 mb-2 scrollbar-hide -mx-2 px-2">
-                  {['all', 'paddy', 'coconut', 'banana', 'vegetable'].map(c => (
-                    <button key={c} onClick={() => setCrop(c)}
-                      className={`px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wide capitalize whitespace-nowrap transition-all ${
-                        crop === c 
-                          ? 'bg-slate-800 text-white shadow-sm' 
-                          : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
-                      }`}>
-                      {c}
-                    </button>
-                  ))}
+                <div className="flex items-baseline gap-3 mb-2">
+                  <span className="text-4xl font-extrabold text-slate-900 dark:text-slate-100 stat-value">{aqiData.aqi}</span>
+                  <span className="text-xs text-slate-400 dark:text-slate-500">PM2.5: {aqiData.pm25} µg/m³</span>
                 </div>
-
-                <div className="space-y-4">
-                  {alerts
-                    .filter(a => crop === 'all' || !a.title || a.title.toLowerCase().includes(crop))
-                    .map((a, i) => (
-                      <div key={i} className={`relative bg-slate-50 border-l-4 rounded-2xl p-4 hover:bg-slate-100 transition-colors ${severityBorder[a.severity]}`}>
-                        <div className="flex gap-3">
-                          <div className={`mt-0.5 flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${severityIconColor[a.severity]}`}>
-                            {a.icon ? <DynamicIcon name={a.icon} size={14} /> : <AlertTriangle size={14} />}
-                          </div>
-                          <div>
-                            <p className="text-sm font-bold text-slate-900 mb-1">{a.title}</p>
-                            <p className="text-sm text-slate-600 leading-relaxed">{a.desc}</p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400">{aqiData.advice}</p>
               </div>
             )}
 
-            {/* AI Recommendations */}
-            {recs.length > 0 && (
-              <div className="bg-white rounded-3xl border border-slate-200/60 shadow-sm p-6">
-                <div className="flex items-center justify-between mb-5">
-                  <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                    <CheckCircle2 size={20} className="text-emerald-500" />
-                    AI Actions
-                  </h2>
-                </div>
-                <div className="space-y-4">
-                  {recs.map((r, i) => (
-                    <div key={i} className="group bg-slate-50 border border-slate-100 rounded-2xl p-4 flex gap-4 hover:border-emerald-200 hover:bg-emerald-50/50 transition-colors">
-                      <div className="mt-1 text-emerald-600">
-                        <DynamicIcon name={r.icon} size={24} />
+            {/* Crop Alerts List */}
+            <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/60 dark:border-slate-800 shadow-sm">
+              <div className="flex items-center justify-between mb-5">
+                <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                  <Siren className="text-rose-500" size={20} />
+                  Active Crop Alerts
+                </h2>
+                <span className="text-xs font-bold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-full">
+                  {alerts.length}
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                {alerts.map((alert, idx) => {
+                  const border = severityBorder[alert.severity] || 'border-l-emerald-500'
+                  const iconStyle = severityIconColor[alert.severity] || 'text-emerald-500 bg-emerald-50 dark:bg-emerald-950/40'
+                  return (
+                    <div key={idx} className={`bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/60 border-l-4 ${border} rounded-2xl p-4 transition-all hover:bg-slate-100/60 dark:hover:bg-slate-800/60`}>
+                      <div className="flex items-start gap-3">
+                        <div className={`p-2 rounded-xl flex-shrink-0 ${iconStyle}`}>
+                          <DynamicIcon name={alert.icon} size={18} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2 mb-1">
+                            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">{alert.title}</h3>
+                            <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+                              {alert.crop}
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed mb-2">{alert.message}</p>
+                          <p className="text-[11px] font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-900/40 p-2 rounded-xl">
+                            💡 Action: {alert.action}
+                          </p>
+                        </div>
                       </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Market Prices Brief */}
+            {marketSummary.length > 0 && (
+              <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/60 dark:border-slate-800 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Kerala Market Highlights</h2>
+                  <Link to="/tracker" className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-0.5">
+                    View All <ChevronRight size={14} />
+                  </Link>
+                </div>
+                <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {marketSummary.map((item, idx) => (
+                    <div key={idx} className="py-3 flex items-center justify-between first:pt-0 last:pb-0">
                       <div>
-                        <span className="inline-block px-2.5 py-1 bg-white border border-slate-200/60 text-slate-500 text-[10px] font-bold uppercase tracking-wider rounded-md mb-2 shadow-sm">
-                          {r.tag}
-                        </span>
-                        <p className="text-sm font-medium text-slate-700 leading-relaxed group-hover:text-slate-900 transition-colors">{r.text}</p>
+                        <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{item.crop}</p>
+                        <p className="text-xs text-slate-400 dark:text-slate-500">{item.market}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-slate-900 dark:text-slate-100 stat-value">₹{item.price}/{item.unit}</p>
+                        <p className={`text-[11px] font-medium ${item.trend === 'up' ? 'text-emerald-600 dark:text-emerald-400' : item.trend === 'down' ? 'text-rose-500' : 'text-slate-400'}`}>
+                          {item.trend === 'up' ? '▲ Up' : item.trend === 'down' ? '▼ Down' : '• Stable'}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -370,8 +376,12 @@ export default function DashboardPage() {
             )}
 
           </div>
+
         </div>
-      </div>
+
+      </main>
     </div>
   )
 }
+
+export default DashboardPage

@@ -14,12 +14,14 @@ export const AuthProvider = ({ children }) => {
       // ── If backend returns "Not logged in" string → not authenticated ──
       if (!data || typeof data === 'string') {
         setUser(null)
+        localStorage.removeItem('agrovision_token')
         return
       }
 
       // ── If backend returns { error: ... } → not authenticated ──────────
       if (data?.error) {
         setUser(null)
+        localStorage.removeItem('agrovision_token')
         return
       }
 
@@ -31,8 +33,12 @@ export const AuthProvider = ({ children }) => {
         (data?.name || data?.email ? data : null)
 
       setUser(extracted || null)
+      if (!extracted) {
+        localStorage.removeItem('agrovision_token')
+      }
     } catch {
       setUser(null)
+      localStorage.removeItem('agrovision_token')
     } finally {
       setLoading(false)
     }
@@ -40,6 +46,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try { await logoutUser() } catch { /* ignore */ }
+    localStorage.removeItem('agrovision_token')
     setUser(null)
   }
 

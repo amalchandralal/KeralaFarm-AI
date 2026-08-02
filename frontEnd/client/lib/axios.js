@@ -13,21 +13,24 @@ const api = axios.create({
   },
 });
 
-// Request interceptor
+// Request interceptor: attach Authorization header if token exists in localStorage
 api.interceptors.request.use(
-  (config) => config,
+  (config) => {
+    try {
+      const token = localStorage.getItem("agrovision_token");
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    } catch { /* ignore */ }
+    return config;
+  },
   (error) => Promise.reject(error),
 );
 
 // Response interceptor
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      window.location.href = "/login";
-    }
-    return Promise.reject(error);
-  },
+  (error) => Promise.reject(error),
 );
 
 export default api;
