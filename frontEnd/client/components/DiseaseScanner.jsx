@@ -71,16 +71,18 @@ const DiseaseScanner = () => {
           onDragLeave={handleDragLeave}
           onClick={() => fileRef.current?.click()}
           className={`flex flex-col items-center justify-center p-10 text-center transition-colors border-2 border-dashed rounded-xl cursor-pointer ${
-            isDragging ? "border-emerald-500 bg-emerald-50" : "border-gray-300 bg-gray-50 hover:bg-gray-100"
+            isDragging 
+              ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40" 
+              : "border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800"
           }`}
         >
-          <div className="p-3 mb-4 text-gray-500 bg-white border border-gray-200 rounded-lg shadow-sm">
+          <div className="p-3 mb-4 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm">
             <UploadCloud size={24} />
           </div>
-          <p className="text-sm font-medium text-gray-900">
+          <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
             Click to upload or drag and drop
           </p>
-          <p className="mt-1 text-xs text-gray-500">SVG, PNG, JPG or GIF (max. 10MB)</p>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">SVG, PNG, JPG or GIF (max. 10MB)</p>
           <input
             ref={fileRef}
             type="file"
@@ -94,7 +96,7 @@ const DiseaseScanner = () => {
 
       {/* Preview Area */}
       {preview && !result && !loading && (
-        <div className="relative overflow-hidden border border-gray-200 rounded-xl bg-gray-50">
+        <div className="relative overflow-hidden border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-800/40">
           <img
             src={preview}
             alt="Crop preview"
@@ -106,7 +108,7 @@ const DiseaseScanner = () => {
               setPreview("");
               setResult(null);
             }}
-            className="absolute p-1.5 text-gray-600 bg-white border border-gray-200 rounded-md shadow-sm top-3 right-3 hover:bg-gray-50"
+            className="absolute p-1.5 text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md shadow-sm top-3 right-3 hover:bg-slate-50 dark:hover:bg-slate-700"
           >
             <X size={16} />
           </button>
@@ -119,7 +121,7 @@ const DiseaseScanner = () => {
           <button
             onClick={handleScan}
             disabled={loading}
-            className="inline-flex items-center justify-center h-10 px-4 text-sm font-medium text-white transition-colors bg-emerald-600 rounded-md hover:bg-emerald-700 disabled:opacity-50"
+            className="inline-flex items-center justify-center h-10 px-4 text-sm font-medium text-white transition-colors bg-emerald-600 dark:bg-emerald-500 rounded-md hover:bg-emerald-700 dark:hover:bg-emerald-600 disabled:opacity-50"
           >
             Analyze Image
           </button>
@@ -128,45 +130,45 @@ const DiseaseScanner = () => {
 
       {/* Loading State */}
       {loading && (
-        <div className="flex flex-col items-center justify-center p-12 border border-gray-200 rounded-xl bg-gray-50">
-          <Loader2 size={32} className="text-emerald-600 animate-spin mb-4" />
-          <p className="text-sm font-medium text-gray-900">Analyzing crop...</p>
-          <p className="text-xs text-gray-500 mt-1">Our AI is processing the image</p>
+        <div className="flex flex-col items-center justify-center p-12 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-800/40">
+          <Loader2 size={32} className="text-emerald-600 dark:text-emerald-400 animate-spin mb-4" />
+          <p className="text-sm font-medium text-slate-900 dark:text-slate-100">Analyzing crop...</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Our AI is processing the image</p>
         </div>
       )}
 
       {/* Error */}
       {error && (
-        <div className="p-4 text-sm text-red-600 border border-red-200 rounded-lg bg-red-50">
+        <div className="p-4 text-sm text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50 rounded-lg bg-rose-50 dark:bg-rose-950/40">
            {error}
         </div>
       )}
 
       {/* Results */}
       {result && !loading && (
-        <div className="overflow-hidden border border-gray-200 rounded-xl">
+        <div className="overflow-hidden border border-slate-200 dark:border-slate-800 rounded-xl">
           <div className="flex flex-col md:flex-row">
             {/* Image Preview Side */}
-            <div className="md:w-1/3 bg-gray-50 border-b md:border-b-0 md:border-r border-gray-200">
+            <div className="md:w-1/3 bg-slate-50 dark:bg-slate-800/40 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-800">
               <img src={preview} alt="Analyzed" className="object-cover w-full h-full max-h-48 md:max-h-full" />
             </div>
             
             {/* Analysis Side */}
-            <div className="p-6 md:w-2/3 bg-white">
+            <div className="p-6 md:w-2/3 bg-white dark:bg-slate-900">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider">Diagnosis</h3>
-                  <p className="mt-1 text-xl font-semibold text-gray-900">{result.disease_name || "Unknown Condition"}</p>
+                  <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Diagnosis</h3>
+                  <p className="mt-1 text-xl font-semibold text-slate-900 dark:text-slate-100">{result.disease_name || "Unknown Condition"}</p>
                 </div>
                 <div className="text-right">
-                  <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                     {confNum.toFixed(1)}% Match
                   </div>
                 </div>
               </div>
               
               <div className="mb-4">
-                <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                   <div 
                     className="h-full bg-emerald-500 transition-all duration-1000"
                     style={{ width: `${Math.min(confNum, 100)}%` }}
@@ -177,27 +179,27 @@ const DiseaseScanner = () => {
               <div className="space-y-4 text-sm">
                 {result.suggested_treatment && (
                   <div>
-                    <h4 className="font-medium text-gray-900">Treatment Plan</h4>
-                    <p className="mt-1 text-gray-600 leading-relaxed">{result.suggested_treatment}</p>
+                    <h4 className="font-medium text-slate-900 dark:text-slate-100">Treatment Plan</h4>
+                    <p className="mt-1 text-slate-600 dark:text-slate-300 leading-relaxed">{result.suggested_treatment}</p>
                   </div>
                 )}
                 
                 {result.possible_causes && (
                   <div>
-                    <h4 className="font-medium text-gray-900">Possible Causes</h4>
-                    <p className="mt-1 text-gray-600 leading-relaxed">{result.possible_causes}</p>
+                    <h4 className="font-medium text-slate-900 dark:text-slate-100">Possible Causes</h4>
+                    <p className="mt-1 text-slate-600 dark:text-slate-300 leading-relaxed">{result.possible_causes}</p>
                   </div>
                 )}
 
                 {result.fertilizer_guidance && (
                   <div>
-                    <h4 className="font-medium text-gray-900">Fertilizer Guidance</h4>
-                    <p className="mt-1 text-gray-600 leading-relaxed">{result.fertilizer_guidance}</p>
+                    <h4 className="font-medium text-slate-900 dark:text-slate-100">Fertilizer Guidance</h4>
+                    <p className="mt-1 text-slate-600 dark:text-slate-300 leading-relaxed">{result.fertilizer_guidance}</p>
                   </div>
                 )}
               </div>
 
-              <div className="mt-6 pt-6 border-t border-gray-100 flex flex-col sm:flex-row gap-3">
+              <div className="mt-6 pt-6 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row gap-3">
                 <button
                   onClick={() => {
                     const guide = {
@@ -220,7 +222,7 @@ const DiseaseScanner = () => {
                     downloaded.add(guide.id);
                     localStorage.setItem('downloaded_guides', JSON.stringify([...downloaded]));
                   }}
-                  className="flex-1 inline-flex items-center justify-center h-10 px-4 text-sm font-medium text-emerald-700 transition-colors bg-emerald-50 border border-emerald-200 rounded-md hover:bg-emerald-100"
+                  className="flex-1 inline-flex items-center justify-center h-10 px-4 text-sm font-medium text-emerald-700 dark:text-emerald-300 transition-colors bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 rounded-md hover:bg-emerald-100 dark:hover:bg-emerald-900/50"
                 >
                   Save for Offline
                 </button>
@@ -230,7 +232,7 @@ const DiseaseScanner = () => {
                     setPreview("");
                     setResult(null);
                   }}
-                  className="flex-1 inline-flex items-center justify-center h-10 px-4 text-sm font-medium text-gray-700 transition-colors bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                  className="flex-1 inline-flex items-center justify-center h-10 px-4 text-sm font-medium text-slate-700 dark:text-slate-200 transition-colors bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-md hover:bg-slate-50 dark:hover:bg-slate-700"
                 >
                   Scan Another Plant
                 </button>

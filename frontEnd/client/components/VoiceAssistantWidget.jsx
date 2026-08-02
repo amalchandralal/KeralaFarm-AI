@@ -80,10 +80,10 @@ const VoiceAssistantWidget = () => {
   };
 
   return (
-    <div className="flex flex-col h-[600px] font-sans">
+    <div className="flex flex-col h-[600px] font-sans bg-white dark:bg-slate-900 transition-colors duration-200">
       
       {/* Chat History */}
-      <div className="flex-1 p-6 overflow-y-auto bg-gray-50 relative">
+      <div className="flex-1 p-6 overflow-y-auto bg-slate-50 dark:bg-slate-950/60 relative">
         {messages.length > 1 && (
           <div className="sticky top-0 z-10 flex justify-end mb-4">
             <button
@@ -103,7 +103,7 @@ const VoiceAssistantWidget = () => {
                 downloaded.add(guide.id);
                 localStorage.setItem('downloaded_guides', JSON.stringify([...downloaded]));
               }}
-              className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-md hover:bg-emerald-100 shadow-sm transition-colors"
+              className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 rounded-md hover:bg-emerald-100 dark:hover:bg-emerald-900/50 shadow-sm transition-colors"
             >
               <Download size={14} />
               Save Chat Offline
@@ -115,8 +115,8 @@ const VoiceAssistantWidget = () => {
             <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm ${
                 msg.role === 'user' 
-                  ? 'bg-emerald-50 text-emerald-900 border border-emerald-100' 
-                  : 'bg-white text-gray-800 border border-gray-200 shadow-sm'
+                  ? 'bg-emerald-600 text-white dark:bg-emerald-500 shadow-sm' 
+                  : 'bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-800 shadow-sm'
               }`}>
                 {msg.content}
               </div>
@@ -126,7 +126,7 @@ const VoiceAssistantWidget = () => {
           {/* Interim text preview */}
           {isListening && interimText && (
             <div className="flex justify-end">
-              <div className="max-w-[80%] rounded-2xl px-4 py-3 text-sm bg-emerald-50/50 text-emerald-700/70 border border-emerald-100/50 italic">
+              <div className="max-w-[80%] rounded-2xl px-4 py-3 text-sm bg-emerald-50/50 dark:bg-emerald-950/40 text-emerald-700/70 dark:text-emerald-300/70 border border-emerald-100/50 dark:border-emerald-900/40 italic">
                 {interimText}...
               </div>
             </div>
@@ -135,8 +135,8 @@ const VoiceAssistantWidget = () => {
           {/* Loading indicator */}
           {isProcessing && (
             <div className="flex justify-start">
-              <div className="flex items-center gap-2 max-w-[80%] rounded-2xl px-4 py-3 text-sm bg-white text-gray-500 border border-gray-200 shadow-sm">
-                <Loader2 size={16} className="animate-spin text-emerald-600" />
+              <div className="flex items-center gap-2 max-w-[80%] rounded-2xl px-4 py-3 text-sm bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-800 shadow-sm">
+                <Loader2 size={16} className="animate-spin text-emerald-600 dark:text-emerald-400" />
                 Thinking...
               </div>
             </div>
@@ -144,7 +144,7 @@ const VoiceAssistantWidget = () => {
           
           {error && (
             <div className="flex justify-center my-2">
-              <span className="text-xs font-medium text-red-500 bg-red-50 px-3 py-1 rounded-full">{error}</span>
+              <span className="text-xs font-medium text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/50 px-3 py-1 rounded-full">{error}</span>
             </div>
           )}
           
@@ -153,7 +153,7 @@ const VoiceAssistantWidget = () => {
       </div>
 
       {/* Input Area */}
-      <div className="p-4 bg-white border-t border-gray-200">
+      <div className="p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
         <div className="flex items-center gap-3 max-w-2xl mx-auto">
           
           {/* Mic Button */}
@@ -161,8 +161,8 @@ const VoiceAssistantWidget = () => {
             onClick={isListening ? stopListening : startListening}
             className={`flex-shrink-0 flex items-center justify-center w-14 h-14 rounded-full transition-all ${
               isListening 
-                ? 'bg-red-50 text-red-600 shadow-sm border border-red-100' 
-                : 'bg-emerald-600 text-white shadow-sm hover:bg-emerald-700'
+                ? 'bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 shadow-sm border border-rose-200 dark:border-rose-800' 
+                : 'bg-emerald-600 dark:bg-emerald-500 text-white shadow-sm hover:bg-emerald-700 dark:hover:bg-emerald-600'
             }`}
             title={isListening ? "Stop listening" : "Start listening"}
           >
@@ -172,7 +172,7 @@ const VoiceAssistantWidget = () => {
               <Mic size={24} />
             )}
             {isListening && (
-              <span className="absolute w-14 h-14 rounded-full border-2 border-red-500/30 animate-ping" />
+              <span className="absolute w-14 h-14 rounded-full border-2 border-rose-500/30 animate-ping" />
             )}
           </button>
 
@@ -184,7 +184,7 @@ const VoiceAssistantWidget = () => {
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Type your question..."
-              className={`w-full h-11 pl-4 text-sm text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 ${(isSpeaking || hasSpokenText) ? 'pr-32' : 'pr-12'}`}
+              className={`w-full h-11 pl-4 text-sm text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 ${(isSpeaking || hasSpokenText) ? 'pr-32' : 'pr-12'}`}
               disabled={isListening || isProcessing}
             />
             <div className="absolute right-2 top-1.5 flex items-center gap-1">
@@ -194,7 +194,7 @@ const VoiceAssistantWidget = () => {
                 <button 
                   onClick={pauseSpeaking}
                   title="Pause Audio"
-                  className="p-2 text-gray-500 hover:text-emerald-600 bg-gray-50 hover:bg-emerald-50 rounded-md transition-colors"
+                  className="p-2 text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 bg-slate-50 dark:bg-slate-700 rounded-md transition-colors"
                 >
                   <Pause size={16} />
                 </button>
@@ -203,7 +203,7 @@ const VoiceAssistantWidget = () => {
                 <button 
                   onClick={resumeSpeaking}
                   title="Resume Audio"
-                  className="p-2 text-gray-500 hover:text-emerald-600 bg-gray-50 hover:bg-emerald-50 rounded-md transition-colors"
+                  className="p-2 text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 bg-slate-50 dark:bg-slate-700 rounded-md transition-colors"
                 >
                   <Play size={16} />
                 </button>
@@ -212,7 +212,7 @@ const VoiceAssistantWidget = () => {
                 <button 
                   onClick={stopSpeaking}
                   title="Stop Audio"
-                  className="p-2 text-gray-500 hover:text-red-600 bg-gray-50 hover:bg-red-50 rounded-md transition-colors"
+                  className="p-2 text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 bg-slate-50 dark:bg-slate-700 rounded-md transition-colors"
                 >
                   <VolumeX size={16} />
                 </button>
@@ -221,7 +221,7 @@ const VoiceAssistantWidget = () => {
                 <button 
                   onClick={replaySpeaking}
                   title="Replay Last Answer"
-                  className="p-2 text-gray-500 hover:text-emerald-600 bg-gray-50 hover:bg-emerald-50 rounded-md transition-colors"
+                  className="p-2 text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 bg-slate-50 dark:bg-slate-700 rounded-md transition-colors"
                 >
                   <RotateCcw size={16} />
                 </button>
@@ -231,7 +231,7 @@ const VoiceAssistantWidget = () => {
               <button 
                 onClick={handleManualSend}
                 disabled={!inputText.trim() || isListening || isProcessing}
-                className="p-2 text-gray-400 hover:text-emerald-600 disabled:opacity-50 disabled:hover:text-gray-400 transition-colors"
+                className="p-2 text-slate-400 dark:text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 disabled:opacity-50 transition-colors"
               >
                 <Send size={18} />
               </button>
@@ -242,7 +242,7 @@ const VoiceAssistantWidget = () => {
         
         {/* Helper Text */}
         <div className="mt-3 text-center">
-          <p className="text-xs text-gray-400 font-mono">
+          <p className="text-xs text-slate-400 dark:text-slate-500 font-mono">
             {isListening ? 'Listening...' : 'Tap the microphone to speak'}
           </p>
         </div>

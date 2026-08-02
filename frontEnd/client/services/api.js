@@ -42,6 +42,20 @@ export const getPlaces = async (params = {}) => {
   return res.data;
 };
 
+export const searchPlaces = async (query) => {
+  if (typeof query === 'string') {
+    if (query.includes(',')) {
+      const [lat, lon] = query.split(',').map(s => s.trim());
+      const res = await api.get("/places", { params: { lat, lon } });
+      return res.data?.places || res.data;
+    }
+    const res = await api.get("/places", { params: { city: query } });
+    return res.data?.places || res.data;
+  }
+  const res = await api.get("/places", { params: query });
+  return res.data?.places || res.data;
+};
+
 // Booking Services
 export const createBooking = async (data) => {
   const res = await api.post("/bookings", data);

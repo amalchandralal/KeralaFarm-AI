@@ -12,36 +12,35 @@ import {
 
 const statusConfig = {
   confirmed: { 
-    color: 'text-emerald-700', 
-    bg: 'bg-emerald-50', 
+    color: 'text-emerald-700 dark:text-emerald-300', 
+    bg: 'bg-emerald-50 dark:bg-emerald-950/50', 
     label: 'Confirmed',
-    icon: <CheckCircle2 size={14} className="text-emerald-600" /> 
+    icon: <CheckCircle2 size={14} className="text-emerald-600 dark:text-emerald-400" /> 
   },
   pending: { 
-    color: 'text-yellow-700', 
-    bg: 'bg-yellow-50', 
+    color: 'text-amber-700 dark:text-amber-300', 
+    bg: 'bg-amber-50 dark:bg-amber-950/50', 
     label: 'Pending',
-    icon: <Clock size={14} className="text-yellow-600" /> 
+    icon: <Clock size={14} className="text-amber-600 dark:text-amber-400" /> 
   },
   cancelled: { 
-    color: 'text-red-700', 
-    bg: 'bg-red-50', 
+    color: 'text-rose-700 dark:text-rose-300', 
+    bg: 'bg-rose-50 dark:bg-rose-950/50', 
     label: 'Cancelled',
-    icon: <XCircle size={14} className="text-red-600" /> 
+    icon: <XCircle size={14} className="text-rose-600 dark:text-rose-400" /> 
   },
 };
 
 const BookingCard = ({ booking }) => {
   const status = booking.status?.toLowerCase() || 'pending';
   const config = statusConfig[status] || { 
-    color: 'text-gray-700', 
-    bg: 'bg-gray-50', 
+    color: 'text-slate-700 dark:text-slate-300', 
+    bg: 'bg-slate-50 dark:bg-slate-800', 
     label: status,
-    icon: <Info size={14} className="text-gray-600" /> 
+    icon: <Info size={14} className="text-slate-600 dark:text-slate-400" /> 
   };
 
   const bookingDate = booking.date ? new Date(booking.date) : null;
-  const isUpcoming = bookingDate && bookingDate > new Date();
   
   // Calculate days until
   const daysUntil = bookingDate 
@@ -49,15 +48,15 @@ const BookingCard = ({ booking }) => {
     : null;
 
   return (
-    <div className="flex flex-col p-5 bg-white border border-gray-200 rounded-lg shadow-sm">
+    <div className="flex flex-col p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm">
       <div className="flex items-start justify-between mb-4">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
             {booking.placeName || booking.place || 'Farm Consultation'}
           </h3>
           <div className="flex items-center gap-1.5 mt-1">
-            <MapPin size={14} className="text-gray-400" />
-            <span className="text-sm text-gray-500">
+            <MapPin size={14} className="text-slate-400 dark:text-slate-500" />
+            <span className="text-sm text-slate-500 dark:text-slate-400">
               {booking.place || 'Kerala, India'}
             </span>
           </div>
@@ -70,10 +69,10 @@ const BookingCard = ({ booking }) => {
 
       <div className="flex flex-col gap-3 mb-4">
         {bookingDate && (
-          <div className="flex items-center justify-between p-3 rounded-md bg-gray-50">
+          <div className="flex items-center justify-between p-3 rounded-md bg-slate-50 dark:bg-slate-800/50">
             <div className="flex items-center gap-2">
-              <Calendar size={16} className="text-gray-500" />
-              <span className="text-sm font-medium text-gray-700">
+              <Calendar size={16} className="text-slate-500 dark:text-slate-400" />
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
                 {bookingDate.toLocaleDateString('en-IN', { 
                   day: 'numeric',
                   month: 'short',
@@ -82,7 +81,7 @@ const BookingCard = ({ booking }) => {
               </span>
             </div>
             {daysUntil !== null && daysUntil > 0 && (
-              <span className="text-xs font-medium text-emerald-600">
+              <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
                 In {daysUntil} Days
               </span>
             )}
@@ -90,23 +89,23 @@ const BookingCard = ({ booking }) => {
         )}
         
         {booking.notes && (
-          <div className="p-3 border border-gray-100 rounded-md bg-gray-50">
-            <p className="text-sm text-gray-600">
+          <div className="p-3 border border-slate-100 dark:border-slate-800 rounded-md bg-slate-50 dark:bg-slate-800/40">
+            <p className="text-sm text-slate-600 dark:text-slate-300">
               {booking.notes}
             </p>
           </div>
         )}
       </div>
 
-      <div className="flex items-center justify-between pt-4 mt-auto border-t border-gray-100">
+      <div className="flex items-center justify-between pt-4 mt-auto border-t border-slate-100 dark:border-slate-800">
         <div className="flex items-center gap-1.5">
-          <Hash size={14} className="text-gray-400" />
-          <span className="font-mono text-sm text-gray-500">
+          <Hash size={14} className="text-slate-400 dark:text-slate-500" />
+          <span className="font-mono text-sm text-slate-500 dark:text-slate-400">
             {booking._id?.slice(-8).toUpperCase() || 'REF-9283'}
           </span>
         </div>
         
-        <button className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors bg-white border border-gray-200 rounded-md hover:bg-gray-50">
+        <button className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-200 transition-colors bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md hover:bg-slate-50 dark:hover:bg-slate-700">
           <Phone size={14} /> Call
         </button>
       </div>

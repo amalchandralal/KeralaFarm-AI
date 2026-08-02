@@ -275,8 +275,12 @@ const DashboardPage = () => {
                         <DynamicIcon name={rec.icon} size={20} />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-sm mb-1">{rec.title}</h3>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{rec.description}</p>
+                        <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-sm mb-1">
+                          {rec.title || rec.tag || 'Advisory'}
+                        </h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                          {rec.description || rec.text || rec.desc || ''}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -331,14 +335,20 @@ const DashboardPage = () => {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-2 mb-1">
                             <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">{alert.title}</h3>
-                            <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
-                              {alert.crop}
-                            </span>
+                            {alert.crop && (
+                              <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+                                {alert.crop}
+                              </span>
+                            )}
                           </div>
-                          <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed mb-2">{alert.message}</p>
-                          <p className="text-[11px] font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-900/40 p-2 rounded-xl">
-                            💡 Action: {alert.action}
+                          <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed mb-2">
+                            {alert.desc || alert.message || ''}
                           </p>
+                          {alert.action && (
+                            <p className="text-[11px] font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-900/40 p-2 rounded-xl">
+                              💡 Action: {alert.action}
+                            </p>
+                          )}
                         </div>
                       </div>
                     </div>

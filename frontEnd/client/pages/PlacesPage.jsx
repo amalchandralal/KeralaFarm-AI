@@ -1,82 +1,58 @@
-import React, { useEffect, useState, useCallback } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
-import { Navigation, Search, Info, AlertCircle } from "lucide-react";
-import { getPlaces } from "../services/api";
+import React, { useState, useCallback } from "react";
+import { searchPlaces } from "../services/api";
 import PlaceCard from "../components/PlaceCard";
+import MapView from "../components/MapView";
+import { Search, Navigation, AlertCircle, Loader2 } from "lucide-react";
 
-// --- 1. Leaflet Icon Fix (Critical for React) ---
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl:
-    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-});
-
-const greenIcon = new L.Icon({
-  iconUrl:
-    "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png",
-  iconRetinaUrl:
-    "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-});
-
-// --- 2. Distance Calculator ---
-const haversineKm = (lat1, lon1, lat2, lon2) => {
-  const R = 6371;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-};
-
-// --- 3. Map Helper (Makes the map move) ---
-function MapUpdater({ center }) {
-  const map = useMap();
-  useEffect(() => {
-    if (center) map.flyTo(center, 12, { animate: true, duration: 1.5 });
-  }, [center, map]);
-  return null;
-}
-
-export default function PlacesPage() {
+const PlacesPage = () => {
   const [places, setPlaces] = useState([]);
-  const [userPos, setUserPos] = useState(null); // [lat, lon]
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [selectedPlaceId, setSelectedPlaceId] = useState(null);
   const [citySearch, setCitySearch] = useState("");
-  const [selectedPlace, setSelectedPlace] = useState(null);
-  const [hasSearched, setHasSearched] = useState(false);
+  const [searchLabel, setSearchLabel] = useState("");
+  const [centerCoords, setCenterCoords] = useState(null);
 
-  // --- 4. Main Search Function (Calls your Backend) ---
-  const performSearch = useCallback(async (params = {}) => {
-    setHasSearched(true);
+  // Unified search function
+  const performSearch = useCallback(async ({ city, lat, lon }) => {
     setLoading(true);
     setError("");
+    setSelectedPlaceId(null);
+
     try {
-      const data = await getPlaces(params);
+      let data = [];
+      let label = "";
 
-      // Update Center
-      setUserPos(data.center);
+      if (city) {
+        data = await searchPlaces(city);
+        label = `Offices in "${city}"`;
+      } else if (lat && lon) {
+        data = await searchPlaces(`${lat},${lon}`);
+        label = "Offices near your location";
+        setCenterCoords({ lat, lon });
+      }
 
-      // Process results: add distance and sort
-      const processed = data.places
-        .map((p) => ({
-          ...p,
-          distance: haversineKm(data.center[0], data.center[1], p.lat, p.lon),
-        }))
-        .sort((a, b) => a.distance - b.distance);
+      // Ensure data is array
+      const placeList = Array.isArray(data) ? data : [];
+
+      // Filter out duplicate or incomplete entries
+      const processed = placeList.map((p, idx) => ({
+        ...p,
+        _id: p._id || p.id || `place_${idx}`,
+        lat: p.lat ? parseFloat(p.lat) : 0,
+        lon: p.lon ? parseFloat(p.lon) : 0,
+        name: p.name || p.display_name || "Krishi Bhavan",
+        address: p.address || p.display_name || "Location details unavailable",
+        distance: p.distance !== undefined ? parseFloat(p.distance) : undefined,
+      })).filter(p => p.lat !== 0 && p.lon !== 0);
 
       setPlaces(processed);
+      setSearchLabel(label);
+
+      if (processed.length > 0 && !centerCoords) {
+        setCenterCoords({ lat: processed[0].lat, lon: processed[0].lon });
+      }
+
       if (processed.length === 0)
         setError("No offices found. Try a broader search.");
     } catch (err) {
@@ -88,7 +64,7 @@ export default function PlacesPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [centerCoords]);
 
   // Handle "Use My Location"
   const locateMe = useCallback(() => {
@@ -118,14 +94,14 @@ export default function PlacesPage() {
   };
 
   return (
-    <div className="min-h-screen px-4 pt-24 pb-12 bg-gray-50 font-sans">
+    <div className="min-h-screen px-4 pt-8 pb-12 mx-auto font-sans bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 transition-colors duration-200">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
+        <div className="mb-8 pt-4">
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">
             Agricultural Offices
           </h1>
-          <p className="mt-1 text-gray-500">
+          <p className="mt-1 text-slate-500 dark:text-slate-400">
             Find Krishi Bhavans and support centers near you
           </p>
         </div>
@@ -133,118 +109,107 @@ export default function PlacesPage() {
         {/* Controls */}
         <div className="flex flex-col gap-4 mb-8 sm:flex-row">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" size={20} />
             <input
               type="text"
               placeholder="Search city (e.g. Kollam, Palakkad)..."
               value={citySearch}
               onChange={(e) => setCitySearch(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleCitySearch()}
-              className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+              className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-lg text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm"
             />
           </div>
-          <button
-            onClick={handleCitySearch}
-            disabled={loading}
-            className="px-6 py-2.5 font-medium text-white transition-colors bg-emerald-600 rounded-md hover:bg-emerald-700 disabled:opacity-50"
-          >
-            {loading ? "Searching..." : "Search"}
-          </button>
-          <button
-            onClick={locateMe}
-            disabled={loading}
-            className="flex items-center justify-center gap-2 px-6 py-2.5 font-medium text-gray-700 transition-colors bg-white border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-50"
-          >
-            <Navigation size={18} /> Use My Location
-          </button>
+
+          <div className="flex gap-2">
+            <button
+              onClick={handleCitySearch}
+              disabled={loading}
+              className="flex-1 sm:flex-none px-6 py-2.5 bg-emerald-600 dark:bg-emerald-500 hover:bg-emerald-700 dark:hover:bg-emerald-600 text-white font-medium text-sm rounded-lg shadow-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {loading ? <Loader2 size={18} className="animate-spin" /> : "Search"}
+            </button>
+
+            <button
+              onClick={locateMe}
+              disabled={loading}
+              className="flex-1 sm:flex-none px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium text-sm rounded-lg shadow-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              <Navigation size={18} className="text-emerald-600 dark:text-emerald-400" />
+              <span className="hidden sm:inline">Use My Location</span>
+            </button>
+          </div>
         </div>
 
-        {/* Error Message */}
+        {/* Error Alert */}
         {error && (
-          <div className="flex items-center gap-2 p-4 mb-6 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg">
-            <AlertCircle size={18} /> {error}
+          <div className="flex items-center gap-3 p-4 mb-8 text-sm text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 rounded-xl">
+            <AlertCircle size={20} className="flex-shrink-0 text-rose-500" />
+            <p>{error}</p>
           </div>
         )}
 
-        {/* Split Layout */}
-        <div className="flex flex-col lg:flex-row gap-6 h-[600px]">
-          {/* Map Section (60%) */}
-          <div className="w-full lg:w-[60%] h-[400px] lg:h-full rounded-xl overflow-hidden shadow-sm border border-gray-200 z-0 relative">
-            {userPos ? (
-              <MapContainer center={userPos} zoom={12} className="w-full h-full">
-                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-
-                <MapUpdater center={userPos} />
-
-                <Marker position={userPos} />
-
-                {places.map((p) => (
-                  <Marker
-                    key={p.id}
-                    position={[p.lat, p.lon]}
-                    icon={greenIcon}
-                    eventHandlers={{ click: () => setSelectedPlace(p) }}
-                  >
-                    <Popup>
-                      <div className="p-1">
-                        <p className="font-semibold text-gray-900">{p.name}</p>
-                        <p className="text-xs font-medium text-emerald-600 mt-1">
-                          {p.distance.toFixed(1)} km away
-                        </p>
-                      </div>
-                    </Popup>
-                  </Marker>
-                ))}
-              </MapContainer>
-            ) : (
-              <div className="flex items-center justify-center h-full bg-gray-100 text-gray-500">
-                {hasSearched ? (
-                  <p className="text-sm">
-                    No location selected yet. Use the search box or location
-                    button above.
-                  </p>
-                ) : (
-                  <p className="text-sm">
+        {/* Content Layout (Map + List Split) */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+          {/* Map Column */}
+          <div className="lg:col-span-7 xl:col-span-8">
+            <div className="sticky top-20 overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm rounded-2xl h-[450px] lg:h-[600px] relative">
+              {places.length > 0 ? (
+                <MapView
+                  places={places}
+                  selectedId={selectedPlaceId}
+                  onSelectPlace={(place) => setSelectedPlaceId(place._id)}
+                  center={centerCoords}
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full p-8 text-center bg-slate-50 dark:bg-slate-900/50">
+                  <div className="p-4 mb-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full shadow-sm">
+                    <Navigation size={32} className="text-slate-400 dark:text-slate-500" />
+                  </div>
+                  <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
                     Search for a city or use your location to load offices.
                   </p>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Results Section (40%) */}
-          <div className="w-full lg:w-[40%] flex flex-col h-full bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-            <div className="px-4 py-3 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
-              <h2 className="text-sm font-semibold text-gray-900">
-                {places.length > 0 ? `Nearest ${places.length} Offices` : 'Nearby Results'}
-              </h2>
-              {loading && (
-                <div className="w-5 h-5 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+                </div>
               )}
             </div>
-            
-            <div className="flex-1 overflow-y-auto p-3 space-y-2">
-              {!loading && places.length === 0 ? (
-                <div className="text-center py-12">
-                  <Info className="mx-auto mb-3 text-gray-400" size={32} />
-                  <p className="text-gray-500 text-sm">
-                    {hasSearched
-                      ? "No offices found in this area."
-                      : "Search to see nearby offices."}
-                  </p>
+          </div>
+
+          {/* Places List Column */}
+          <div className="flex flex-col lg:col-span-5 xl:col-span-4 h-[600px]">
+            <div className="flex-shrink-0 flex items-center justify-between mb-3 px-1">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                {searchLabel || "Nearby Results"}
+              </h2>
+              {places.length > 0 && (
+                <span className="text-xs font-semibold px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-full">
+                  {places.length} found
+                </span>
+              )}
+            </div>
+
+            <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+              {loading ? (
+                <div className="flex flex-col items-center justify-center h-48 gap-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl">
+                  <Loader2 size={24} className="animate-spin text-emerald-600 dark:text-emerald-400" />
+                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Finding Krishi Bhavans...</p>
                 </div>
-              ) : (
-                places.map((p) => (
-                  <PlaceCard 
-                    key={p.id} 
-                    place={p} 
-                    isSelected={selectedPlace?.id === p.id}
+              ) : places.length > 0 ? (
+                places.map((place) => (
+                  <PlaceCard
+                    key={place._id}
+                    place={place}
+                    isSelected={selectedPlaceId === place._id}
                     onClick={() => {
-                      setUserPos([p.lat, p.lon]);
-                      setSelectedPlace(p);
+                      setSelectedPlaceId(place._id);
+                      setCenterCoords({ lat: place.lat, lon: place.lon });
                     }}
                   />
                 ))
+              ) : (
+                <div className="flex flex-col items-center justify-center h-48 p-6 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl">
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                    Search to see nearby offices.
+                  </p>
+                </div>
               )}
             </div>
           </div>
@@ -252,4 +217,6 @@ export default function PlacesPage() {
       </div>
     </div>
   );
-}
+};
+
+export default PlacesPage;
