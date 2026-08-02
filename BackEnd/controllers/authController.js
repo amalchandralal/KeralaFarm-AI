@@ -5,7 +5,11 @@ const isProduction = process.env.NODE_ENV === "production";
 const register = async (req, res) => {
   try {
     const user = await authService.registerUser(req.body);
-    res.json(user);
+    res.status(201).json({
+      success: true,
+      message: "User registered successfully",
+      user,
+    });
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message });
   }
@@ -19,6 +23,7 @@ const login = async (req, res) => {
         httpOnly: true,
         secure: isProduction,
         sameSite: isProduction ? "none" : "lax",
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       })
       .json({ user, token });
   } catch (err) {
