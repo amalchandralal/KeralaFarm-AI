@@ -12,7 +12,6 @@ const RegisterPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const { refreshUser } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -32,16 +31,19 @@ const RegisterPage = () => {
       await registerUser({ name, email, password });
       navigate("/login");
     } catch (err) {
-      setError(
-        err?.response?.data?.message || "Registration failed. Please try again."
-      );
+      const serverError =
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        err?.message ||
+        "Registration failed. Please try again.";
+      setError(serverError);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-[85vh] flex items-center justify-center px-4 py-12 bg-gray-50 dark:bg-slate-950 font-sans transition-colors duration-200">
+    <div className="min-h-[85vh] flex items-center justify-center px-4 py-12 bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-200">
       <div className="w-full max-w-md">
 
         {/* Header Section */}
@@ -49,18 +51,18 @@ const RegisterPage = () => {
           <div className="inline-flex items-center justify-center w-12 h-12 mb-4 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">
              <UserPlus size={24} />
           </div>
-          <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-slate-100">Create Account</h1>
-          <p className="mt-2 text-sm text-gray-500 dark:text-slate-400">
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">Create Account</h1>
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
             Join AgroVision today
           </p>
         </div>
 
         {/* Card Section */}
-        <div className="px-6 py-8 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-sm rounded-xl sm:px-10">
+        <div className="px-6 py-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm rounded-xl sm:px-10">
 
           {/* Error Alert */}
           {error && (
-            <div className="flex items-center gap-3 p-3 mb-6 text-sm text-red-600 dark:text-red-400 border border-transparent rounded-lg bg-red-50 dark:bg-red-950/40 animate-fade-in">
+            <div className="flex items-center gap-3 p-3 mb-6 text-sm text-rose-600 dark:text-rose-400 border border-rose-200/60 dark:border-rose-900/50 rounded-lg bg-rose-50 dark:bg-rose-950/40 animate-fade-in">
               <AlertCircle size={18} className="flex-shrink-0" />
               <p>{error}</p>
             </div>
@@ -69,7 +71,7 @@ const RegisterPage = () => {
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label htmlFor="name" className="block mb-2 text-sm font-medium text-gray-900 dark:text-slate-200">
+              <label htmlFor="name" className="block mb-2 text-sm font-medium text-slate-900 dark:text-slate-200">
                 Full Name 
               </label>
               <input
@@ -79,13 +81,13 @@ const RegisterPage = () => {
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Your name"
                 required
-                className="block w-full px-3 py-2 text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 transition-colors bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg h-11 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 sm:text-sm"
+                className="block w-full px-3 py-2 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 transition-colors bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg h-11 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 sm:text-sm"
                 autoComplete="name"
               />
             </div>
 
             <div>
-              <label htmlFor="email" className="block mb-2 text-sm font-medium text-gray-900 dark:text-slate-200">
+              <label htmlFor="email" className="block mb-2 text-slate-900 dark:text-slate-200 font-medium text-sm">
                 Email Address
               </label>
               <input
@@ -95,13 +97,13 @@ const RegisterPage = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="your@email.com"
                 required
-                className="block w-full px-3 py-2 text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 transition-colors bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg h-11 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 sm:text-sm"
+                className="block w-full px-3 py-2 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 transition-colors bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg h-11 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 sm:text-sm"
                 autoComplete="email"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block mb-2 text-sm font-medium text-gray-900 dark:text-slate-200">
+              <label htmlFor="password" className="block mb-2 text-sm font-medium text-slate-900 dark:text-slate-200">
                 Password
               </label>
               <div className="relative">
@@ -112,19 +114,19 @@ const RegisterPage = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Min 6 characters"
                   required
-                  className="block w-full px-3 py-2 pr-10 text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 transition-colors bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg h-11 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 sm:text-sm"
+                  className="block w-full px-3 py-2 pr-10 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 transition-colors bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg h-11 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 sm:text-sm"
                   autoComplete="new-password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 focus:outline-none"
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 focus:outline-none"
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
               {password.length > 0 && password.length < 6 && (
-                <p className="mt-1.5 text-xs text-red-500 dark:text-red-400">Password must be at least 6 characters.</p>
+                <p className="mt-1.5 text-xs text-rose-500 dark:text-rose-400">Password must be at least 6 characters.</p>
               )}
             </div>
 
@@ -148,8 +150,8 @@ const RegisterPage = () => {
           </form>
 
           {/* Footer Link */}
-          <div className="pt-6 mt-6 border-t border-gray-100 dark:border-slate-800">
-            <p className="text-sm text-center text-gray-600 dark:text-slate-400">
+          <div className="pt-6 mt-6 border-t border-slate-100 dark:border-slate-800">
+            <p className="text-sm text-center text-slate-600 dark:text-slate-400">
               Already have an account?{" "}
               <Link
                 to="/login"

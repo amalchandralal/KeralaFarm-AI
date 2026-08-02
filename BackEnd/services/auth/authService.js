@@ -12,21 +12,32 @@ async function registerUser({ name, email, password }) {
     throw { status: 400, message: "Password must be at least 6 characters long" };
   }
 
-  const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
+  const cleanEmail = email.toLowerCase().trim();
+
+  // Explicit check for existing email
+  const existingUser = await User.findOne({ email: cleanEmail });
   if (existingUser) {
-    throw { status: 400, message: "User with this email already exists" };
+    throw { status: 400, message: "An account with this email address already exists. Please login or use a different email." };
   }
 
-  const hashedPassword = await bcrypt.hash(password, 12);
-  const user = await User.create({
-    name: name.trim(),
-    email: email.toLowerCase().trim(),
-    password: hashedPassword,
-  });
+  try {
+    const hashedPassword = await bcrypt.hash(password, 12);
+    const user = await User.create({
+      name: name.trim(),
+      email: cleanEmail,
+      password: hashedPassword,
+    });
 
-  const userObj = user.toObject();
-  delete userObj.password;
-  return userObj;
+    const userObj = user.toObject();
+    delete userObj.password;
+    return userObj;
+  } catch (err) {
+    // Handle MongoDB duplicate key error (E11000) for email
+    if (err.code === 11000) {
+      throw { status: 400, message: "An account with this email address already exists. Please login or use a different email." };
+    }
+    throw { status: 400, message: err.message || "Registration failed" };
+  }
 }
 
 async function loginUser({ email, password }) {
@@ -36,12 +47,12 @@ async function loginUser({ email, password }) {
 
   const user = await User.findOne({ email: email.toLowerCase().trim() });
   if (!user) {
-    throw { status: 404, message: "User not found" };
+    throw { status: 404, message: "User not found with this email" };
   }
 
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) {
-    throw { status: 422, message: "Password incorrect" };
+    throw { status: 422, message: "Incorrect password" };
   }
 
   const token = jwt.sign(
@@ -65,7 +76,6 @@ async function getUserProfile(userId) {
 
 async function logoutUser(token) {
   if (token) {
-    // Blacklist token in Redis for 7 days (matching JWT expiry)
     await blacklistToken(token, 604800);
   }
   return true;
