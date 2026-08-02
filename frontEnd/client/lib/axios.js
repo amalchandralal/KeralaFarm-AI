@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const apiBase = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const apiBase = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? "https://15.207.98.184.nip.io/api" : "http://localhost:5000/api");
 const baseURL = apiBase.endsWith("/api")
   ? apiBase
   : apiBase.replace(/\/$/, "") + "/api";
