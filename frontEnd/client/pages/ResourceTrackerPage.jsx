@@ -1,4 +1,10 @@
 import React, { useState, useEffect } from 'react'
+import {
+  getInputEntries,
+  getMarketPrices,
+  createInputEntry,
+  deleteInputEntry,
+} from '../services/api'
 
 const SCHEMES = [
   { title: 'PM-KISAN',               desc: '₹6000/year direct income support to farmers',                    status: 'Active' },
@@ -19,9 +25,6 @@ const INDIAN_STATES = [
   'Nagaland', 'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu',
   'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal'
 ];
-
-const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
-const API = apiBase.endsWith('/api') ? apiBase : apiBase.replace(/\/$/, '') + '/api'
 
 export default function ResourceTrackerPage() {
   const [tab, setTab] = useState('inputs')
@@ -48,8 +51,7 @@ export default function ResourceTrackerPage() {
   useEffect(() => {
     if (tab !== 'inputs') return
     setLoading(true)
-    fetch(`${API}/input-entries`, { credentials: 'include' })
-      .then(res => res.json())
+    getInputEntries()
       .then(data => {
         if (Array.isArray(data)) setEntries(data)
         else setEntries([])
@@ -63,11 +65,10 @@ export default function ResourceTrackerPage() {
     if (tab !== 'market') return
     setMarketLoading(true)
     setMarketError('')
-    fetch(`${API}/market-prices?state=${encodeURIComponent(selectedState)}`, { credentials: 'include' })
-      .then(res => res.json())
+    getMarketPrices(selectedState)
       .then(data => {
         if (Array.isArray(data)) setMarketPrices(data)
-        else if (data.error) setMarketError(data.error)
+        else if (data?.error) setMarketError(data.error)
         else setMarketPrices([])
       })
       .catch(() => setMarketError('Failed to load market prices.'))
@@ -84,25 +85,15 @@ export default function ResourceTrackerPage() {
     setSaving(true)
     setError('')
     try {
-      const res = await fetch(`${API}/input-entries`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ ...form, cost: Number(form.cost) }),
+      const data = await createInputEntry({ ...form, cost: Number(form.cost) })
+      setEntries(prev => [data, ...prev])
+      setForm({
+        date: new Date().toISOString().split('T')[0],
+        category: 'fertilizer', item: '', quantity: '', unit: 'kg', cost: '', notes: ''
       })
-      const data = await res.json()
-      if (res.ok) {
-        setEntries(prev => [data, ...prev])
-        setForm({
-          date: new Date().toISOString().split('T')[0],
-          category: 'fertilizer', item: '', quantity: '', unit: 'kg', cost: '', notes: ''
-        })
-        setShowForm(false)
-      } else {
-        setError(data.error || 'Failed to save entry.')
-      }
-    } catch {
-      setError('Network error. Please try again.')
+      setShowForm(false)
+    } catch (err) {
+      setError(err?.response?.data?.error || 'Failed to save entry.')
     } finally {
       setSaving(false)
     }
@@ -111,7 +102,7 @@ export default function ResourceTrackerPage() {
   // ── Delete entry ──
   const deleteEntry = async (id) => {
     try {
-      await fetch(`${API}/input-entries/${id}`, { method: 'DELETE', credentials: 'include' })
+      await deleteInputEntry(id)
       setEntries(prev => prev.filter(e => e._id !== id))
     } catch {
       setError('Failed to delete entry.')

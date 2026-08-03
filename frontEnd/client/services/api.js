@@ -91,3 +91,24 @@ export const getNotifications = async (lat, lon) => {
   const res = await api.get(`/notifications${params}`);
   return res.data;
 };
+
+// Resource Tracker Services
+export const getInputEntries = async () => {
+  const res = await api.get("/input-entries");
+  return res.data;
+};
+
+export const createInputEntry = async (data) => {
+  const res = await api.post("/input-entries", data);
+  return res.data;
+};
+
+export const deleteInputEntry = async (id) => {
+  const res = await api.delete(`/input-entries/${id}`);
+  return res.data;
+};
+
+export const getMarketPrices = async (state = "Keralam") => {
+  const res = await api.get(`/market-prices?state=${encodeURIComponent(state)}`);
+  return res.data;
+};
