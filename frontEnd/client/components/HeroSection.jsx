@@ -22,7 +22,7 @@ const HeroSection = () => {
         });
       } catch (error) {
         console.error('Weather fetch error:', error);
-        setWeather({ temp: 28, location: "Kerala" });
+        setWeather({ temp: 28, location: "Your Location" });
       }
     };
 
@@ -33,11 +33,11 @@ const HeroSection = () => {
         },
         (error) => {
           console.error('Geolocation error:', error);
-          setWeather({ temp: 28, location: "Palakkad, Kerala" });
+          setWeather({ temp: 28, location: "Local Station" });
         }
       );
     } else {
-      setWeather({ temp: 28, location: "Kerala" });
+      setWeather({ temp: 28, location: "Your Location" });
     }
   }, []);
 
@@ -67,7 +67,7 @@ const HeroSection = () => {
           </h1>
           
           <p className="max-w-2xl mb-10 text-xl leading-relaxed text-gray-500 dark:text-slate-400 sm:text-2xl">
-            A voice-first intelligent assistant for Kerala's farmers. Get instant help with crop questions, disease diagnosis, and daily advisory.
+            An intelligent voice-first AI assistant for farmers. Get instant help with crop questions, disease diagnosis, and daily advisory.
           </p>
           
           <div className="flex flex-col w-full gap-4 sm:flex-row sm:w-auto">
@@ -97,7 +97,7 @@ const HeroSection = () => {
           <div className="relative z-10 overflow-hidden bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl shadow-xl">
             <img 
               src="https://images.unsplash.com/photo-1523348837708-15d4a09cfac2?auto=format&fit=crop&q=80&w=1000" 
-              alt="Farming in Kerala" 
+              alt="Smart Farming Platform" 
               className="object-cover w-full h-[600px]"
               referrerPolicy="no-referrer"
             />
