@@ -1,6 +1,7 @@
 const axios = require("axios");
 const logger = require("../../utils/logger");
 
+const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_PLACES_API_KEY;
 const GRAPHHOPPER_KEY = process.env.GRAPHHOPPER_KEY;
 const GH_GEOCODE_URL = "https://graphhopper.com/api/1/geocode";
 
@@ -18,14 +19,60 @@ const haversineKm = (lat1, lon1, lat2, lon2) => {
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+// --- Google Places API Search ---
+const googlePlacesSearch = async ({ lat, lon, city }) => {
+  try {
+    let targetLat = parseFloat(lat);
+    let targetLon = parseFloat(lon);
+
+    if (city) {
+      const geoUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(city + ", India")}&key=${GOOGLE_MAPS_API_KEY}`;
+      const geoRes = await axios.get(geoUrl, { timeout: 10000 });
+      if (geoRes.data?.results?.length > 0) {
+        const loc = geoRes.data.results[0].geometry.location;
+        targetLat = loc.lat;
+        targetLon = loc.lng;
+      }
+    }
+
+    if (isNaN(targetLat) || isNaN(targetLon)) return null;
+
+    const query = city ? `Krishi Bhavan in ${city}` : "Krishi Bhavan Agriculture Office";
+    const searchUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&location=${targetLat},${targetLon}&radius=15000&key=${GOOGLE_MAPS_API_KEY}`;
+    
+    const searchRes = await axios.get(searchUrl, { timeout: 10000 });
+    const results = searchRes.data?.results || [];
+
+    const processed = results.slice(0, 8).map((place, idx) => ({
+      id: place.place_id || `gplace_${idx}`,
+      name: place.name || "Agricultural Office",
+      lat: place.geometry?.location?.lat || targetLat,
+      lon: place.geometry?.location?.lng || targetLon,
+      address: place.formatted_address || place.vicinity || "Address unavailable",
+      rating: place.rating,
+      distance: haversineKm(targetLat, targetLon, place.geometry?.location?.lat || targetLat, place.geometry?.location?.lng || targetLon)
+    })).sort((a, b) => a.distance - b.distance);
+
+    return { places: processed, center: [targetLat, targetLon] };
+  } catch (err) {
+    logger.error("Google Places API error:", err.message);
+    return null;
+  }
+};
+
 const geocodeCity = async (cityName) => {
-  const res = await axios.get(GH_GEOCODE_URL, {
-    params: { q: `${cityName}, India`, locale: "en", limit: 1, key: GRAPHHOPPER_KEY },
-    timeout: 10000,
-  });
-  if (res.data?.hits?.length > 0) {
-    const hit = res.data.hits[0];
-    return { lat: hit.point.lat, lon: hit.point.lng, name: hit.city || hit.name || cityName };
+  if (!GRAPHHOPPER_KEY) return null;
+  try {
+    const res = await axios.get(GH_GEOCODE_URL, {
+      params: { q: `${cityName}, India`, locale: "en", limit: 1, key: GRAPHHOPPER_KEY },
+      timeout: 10000,
+    });
+    if (res.data?.hits?.length > 0) {
+      const hit = res.data.hits[0];
+      return { lat: hit.point.lat, lon: hit.point.lng, name: hit.city || hit.name || cityName };
+    }
+  } catch (e) {
+    logger.error("GraphHopper geocode failed:", e.message);
   }
   return null;
 };
@@ -66,8 +113,12 @@ const nominatimSearch = async (query, viewbox) => {
 };
 
 async function findNearbyPlaces({ lat, lon, city }) {
-  if (!GRAPHHOPPER_KEY) {
-    throw { status: 500, message: "GraphHopper API key not configured." };
+  // Try Google Places API first if Key exists
+  if (GOOGLE_MAPS_API_KEY && GOOGLE_MAPS_API_KEY.trim() !== "") {
+    const googleResult = await googlePlacesSearch({ lat, lon, city });
+    if (googleResult && googleResult.places.length > 0) {
+      return googleResult;
+    }
   }
 
   let targetLat = lat ? parseFloat(lat) : NaN;
@@ -77,10 +128,21 @@ async function findNearbyPlaces({ lat, lon, city }) {
 
   if (city) {
     const geo = await geocodeCity(city.trim());
-    if (!geo) throw { status: 404, message: `City "${city}" not found. Try a different spelling.` };
-    targetLat = geo.lat;
-    targetLon = geo.lon;
-    cityLabel = geo.name;
+    if (geo) {
+      targetLat = geo.lat;
+      targetLon = geo.lon;
+      cityLabel = geo.name;
+    } else {
+      // Fallback geocode via Nominatim if GraphHopper key not present
+      const nomGeo = await nominatimSearch(`${city.trim()}, India`, null);
+      if (nomGeo?.length > 0) {
+        targetLat = parseFloat(nomGeo[0].lat);
+        targetLon = parseFloat(nomGeo[0].lon);
+        cityLabel = city.trim();
+      } else {
+        throw { status: 404, message: `City "${city}" not found. Try a different spelling.` };
+      }
+    }
   } else if (!isNaN(targetLat) && !isNaN(targetLon)) {
     isGPS = true;
   } else {

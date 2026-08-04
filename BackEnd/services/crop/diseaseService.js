@@ -13,12 +13,13 @@ async function analyzeCropDisease(file) {
     const base64Image = imageBuffer.toString("base64");
 
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash",
+      model: "gemini-1.5-flash",
       systemInstruction:
         "You are an expert plant pathologist. Analyze crop images. If a disease is found, provide details. If the plant is healthy, indicate that. Always return response in JSON.",
       generationConfig: {
         responseMimeType: "application/json",
         responseSchema: DISEASE_SCHEMA,
+        maxOutputTokens: 1024,
       },
     });
 

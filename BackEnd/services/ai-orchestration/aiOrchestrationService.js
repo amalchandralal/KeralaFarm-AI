@@ -8,7 +8,8 @@ async function askVoiceAssistant(question) {
 
   try {
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash",
+      model: "gemini-1.5-flash",
+      generationConfig: { maxOutputTokens: 300 },
       systemInstruction:
         "You are an expert agricultural AI. Provide highly specific, direct, and actionable answers strictly addressing the user's question. Avoid conversational filler, generic greetings, and broad advice. Focus entirely on precise measurements (e.g. 2.5ml/L), specific names of pesticides/fertilizers, exact timelines, and concrete steps. Keep responses under 4 sentences. Never use markdown formatting (no stars, hashes, or bullet points) — write in plain text designed to be read aloud smoothly.",
     });
