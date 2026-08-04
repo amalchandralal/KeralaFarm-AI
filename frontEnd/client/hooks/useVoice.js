@@ -14,6 +14,7 @@ export const useVoice = ({ lang = 'en-IN', onResult, onError } = {}) => {
 
   const recognitionRef  = useRef(null)
   const accumulated     = useRef('')
+  const latestTextRef   = useRef('')
   const silenceTimer    = useRef(null)
   const restartTimer    = useRef(null)
   const active          = useRef(false)
@@ -28,18 +29,23 @@ export const useVoice = ({ lang = 'en-IN', onResult, onError } = {}) => {
   const commit = useCallback((text) => {
     clearTimers()
     active.current = false
-    recognitionRef.current?.stop()
+    try { recognitionRef.current?.stop() } catch {}
     setIsListening(false)
     setInterimText('')
-    setTranscript(text)
-    onResult?.(text)
+    const cleanText = text.trim()
+    if (cleanText) {
+      setTranscript(cleanText)
+      onResult?.(cleanText)
+    }
   }, [onResult])
 
   const scheduleSilenceCommit = useCallback((text) => {
     if (silenceTimer.current) clearTimeout(silenceTimer.current)
     silenceTimer.current = setTimeout(() => {
-      if (text.trim()) commit(text.trim())
-    }, 2000)
+      if (text && text.trim()) {
+        commit(text.trim())
+      }
+    }, 1200) // 1.2s silence detection
   }, [commit])
 
   const createAndStart = useCallback(() => {
@@ -66,18 +72,26 @@ export const useVoice = ({ lang = 'en-IN', onResult, onError } = {}) => {
         if (e.results[i].isFinal) final += t + ' '
         else interim += t
       }
+
       if (final) {
-        accumulated.current = (accumulated.current + final).trim()
-        setInterimText(accumulated.current)
-        scheduleSilenceCommit(accumulated.current)
-      } else if (interim) {
-        setInterimText((accumulated.current + ' ' + interim).trim())
-        if (silenceTimer.current) clearTimeout(silenceTimer.current)
+        accumulated.current = (accumulated.current + ' ' + final).trim()
+      }
+
+      const fullCurrentText = (accumulated.current + ' ' + interim).trim()
+      if (fullCurrentText) {
+        latestTextRef.current = fullCurrentText
+        setInterimText(fullCurrentText)
+        scheduleSilenceCommit(fullCurrentText)
       }
     }
 
     r.onerror = (e) => {
       if (e.error === 'no-speech' || e.error === 'aborted' || e.error === 'network') {
+        const spoken = latestTextRef.current || accumulated.current
+        if (spoken && spoken.trim()) {
+          commit(spoken.trim())
+          return
+        }
         active.current = false
         setIsListening(false)
         clearTimers()
@@ -96,6 +110,11 @@ export const useVoice = ({ lang = 'en-IN', onResult, onError } = {}) => {
 
     r.onend = () => {
       if (active.current) {
+        const spoken = latestTextRef.current || accumulated.current
+        if (spoken && spoken.trim()) {
+          commit(spoken.trim())
+          return
+        }
         restartTimer.current = setTimeout(() => {
           if (active.current) {
             try { r.start() } catch { setIsListening(false) }
@@ -107,11 +126,12 @@ export const useVoice = ({ lang = 'en-IN', onResult, onError } = {}) => {
     }
 
     try { r.start() } catch { onError?.('Could not start microphone. Please try again.') }
-  }, [onError, scheduleSilenceCommit])
+  }, [onError, scheduleSilenceCommit, commit])
 
   const startListening = useCallback(() => {
-    accumulated.current = ''
-    active.current      = true
+    accumulated.current  = ''
+    latestTextRef.current = ''
+    active.current       = true
     clearTimers()
     setInterimText('')
     setTranscript('')
@@ -122,10 +142,11 @@ export const useVoice = ({ lang = 'en-IN', onResult, onError } = {}) => {
   const stopListening = useCallback(() => {
     clearTimers()
     active.current = false
-    const text = accumulated.current.trim()
-    if (text) commit(text)
-    else {
-      recognitionRef.current?.stop()
+    const text = (latestTextRef.current || accumulated.current).trim()
+    if (text) {
+      commit(text)
+    } else {
+      try { recognitionRef.current?.stop() } catch {}
       setIsListening(false)
     }
   }, [commit])
