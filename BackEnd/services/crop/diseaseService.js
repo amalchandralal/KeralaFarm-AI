@@ -12,7 +12,7 @@ async function analyzeCropDisease(file) {
     const imageBuffer = fs.readFileSync(file.path);
     const base64Image = imageBuffer.toString("base64");
 
-    const candidateModels = ["gemini-1.5-flash-latest", "gemini-1.5-flash", "gemini-pro-vision"];
+    const candidateModels = ["gemini-2.0-flash", "gemini-1.5-flash-latest", "gemini-1.5-flash", "gemini-pro-vision", "gemini-pro"];
     let result = null;
     let lastErr = null;
 
