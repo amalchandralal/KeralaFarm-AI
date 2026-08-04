@@ -12,19 +12,35 @@ async function analyzeCropDisease(file) {
     const imageBuffer = fs.readFileSync(file.path);
     const base64Image = imageBuffer.toString("base64");
 
-    const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
-      systemInstruction:
-        'You are an expert plant pathologist. Analyze the uploaded crop image. Always return a raw JSON object with keys: "disease_name", "possible_causes", "suggested_treatment", "fertilizer_guidance", "confidence_level". Do not wrap in markdown.',
-      generationConfig: {
-        maxOutputTokens: 600,
-      },
-    });
+    const candidateModels = ["gemini-1.5-flash-latest", "gemini-1.5-flash", "gemini-pro-vision"];
+    let result = null;
+    let lastErr = null;
 
-    const result = await model.generateContent([
-      { inlineData: { mimeType: file.mimetype || "image/jpeg", data: base64Image } },
-      "Identify the plant disease in this image. Provide treatment and fertilizer guidance.",
-    ]);
+    for (const modelName of candidateModels) {
+      try {
+        const model = genAI.getGenerativeModel({
+          model: modelName,
+          systemInstruction:
+            'You are an expert plant pathologist. Analyze the uploaded crop image. Always return a raw JSON object with keys: "disease_name", "possible_causes", "suggested_treatment", "fertilizer_guidance", "confidence_level". Do not wrap in markdown.',
+          generationConfig: {
+            maxOutputTokens: 600,
+          },
+        });
+
+        result = await model.generateContent([
+          { inlineData: { mimeType: file.mimetype || "image/jpeg", data: base64Image } },
+          "Identify the plant disease in this image. Provide treatment and fertilizer guidance.",
+        ]);
+        if (result) break;
+      } catch (e) {
+        lastErr = e;
+        logger.warn(`Model ${modelName} failed: ${e.message}. Retrying next model...`);
+      }
+    }
+
+    if (!result) {
+      throw lastErr || new Error("All candidate Gemini vision models failed");
+    }
 
     let text = result.response.text().trim();
     text = text.replace(/```json/gi, "").replace(/```/g, "").trim();

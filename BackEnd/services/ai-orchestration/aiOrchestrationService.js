@@ -7,14 +7,28 @@ async function askVoiceAssistant(question) {
   }
 
   try {
-    const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
-      generationConfig: { maxOutputTokens: 300 },
-      systemInstruction:
-        "You are an expert agricultural AI. Provide highly specific, direct, and actionable answers strictly addressing the user's question. Avoid conversational filler, generic greetings, and broad advice. Focus entirely on precise measurements (e.g. 2.5ml/L), specific names of pesticides/fertilizers, exact timelines, and concrete steps. Keep responses under 4 sentences. Never use markdown formatting (no stars, hashes, or bullet points) — write in plain text designed to be read aloud smoothly.",
-    });
+    const candidateModels = ["gemini-1.5-flash-latest", "gemini-1.5-flash", "gemini-1.5-pro"];
+    let result = null;
+    let lastErr = null;
 
-    const result = await model.generateContent(`Farmer Question: ${question}`);
+    for (const modelName of candidateModels) {
+      try {
+        const model = genAI.getGenerativeModel({
+          model: modelName,
+          generationConfig: { maxOutputTokens: 300 },
+          systemInstruction:
+            "You are an expert agricultural AI. Provide highly specific, direct, and actionable answers strictly addressing the user's question. Avoid conversational filler, generic greetings, and broad advice. Focus entirely on precise measurements (e.g. 2.5ml/L), specific names of pesticides/fertilizers, exact timelines, and concrete steps. Keep responses under 4 sentences. Never use markdown formatting (no stars, hashes, or bullet points) — write in plain text designed to be read aloud smoothly.",
+        });
+        result = await model.generateContent(`Farmer Question: ${question}`);
+        if (result) break;
+      } catch (e) {
+        lastErr = e;
+        logger.warn(`Voice model ${modelName} failed: ${e.message}`);
+      }
+    }
+
+    if (!result) throw lastErr || new Error("All voice models failed");
+
     const rawAnswer = result.response.text();
     const cleanAnswer = rawAnswer.replace(/\*/g, "");
 
