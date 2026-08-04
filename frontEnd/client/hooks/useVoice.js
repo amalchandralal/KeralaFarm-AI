@@ -77,14 +77,18 @@ export const useVoice = ({ lang = 'en-IN', onResult, onError } = {}) => {
     }
 
     r.onerror = (e) => {
-      if (e.error === 'no-speech' || e.error === 'aborted') return
+      if (e.error === 'no-speech' || e.error === 'aborted' || e.error === 'network') {
+        active.current = false
+        setIsListening(false)
+        clearTimers()
+        return
+      }
       active.current = false
       setIsListening(false)
       clearTimers()
       const msgs = {
         'not-allowed'         : 'Microphone blocked. Click the lock icon in your browser address bar → Allow microphone.',
         'audio-capture'       : 'No microphone found. Please connect one.',
-        'network'             : 'Network error. Check your internet connection.',
         'service-not-allowed' : 'Please use Google Chrome or Microsoft Edge.',
       }
       onError?.(msgs[e.error] ?? `Voice error: ${e.error}`)

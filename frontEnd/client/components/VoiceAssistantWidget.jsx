@@ -158,7 +158,11 @@ const VoiceAssistantWidget = () => {
           
           {/* Mic Button */}
           <button 
-            onClick={isListening ? stopListening : startListening}
+            onClick={() => {
+              setError('');
+              if (isListening) stopListening();
+              else startListening();
+            }}
             className={`flex-shrink-0 flex items-center justify-center w-14 h-14 rounded-full transition-all ${
               isListening 
                 ? 'bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 shadow-sm border border-rose-200 dark:border-rose-800' 
