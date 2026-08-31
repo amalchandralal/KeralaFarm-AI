@@ -1,0 +1,1 @@
+This is not a valid image file. It is used to test upload validation in the crop disease scanner.

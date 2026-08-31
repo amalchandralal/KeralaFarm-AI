@@ -1,0 +1,20 @@
+{
+  "name": "agrovision-e2e",
+  "version": "1.0.0",
+  "private": true,
+  "description": "End-to-end test suite for AgroVision AI using Playwright",
+  "scripts": {
+    "test": "npx playwright test",
+    "test:ui": "npx playwright test --grep @ui",
+    "test:api": "npx playwright test --grep @api",
+    "test:headed": "npx playwright test --headed",
+    "report": "npx playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.0",
+    "dotenv": "^16.4.5"
+  },
+  "dependencies": {
+    "mongodb": "^6.10.0"
+  }
+}
